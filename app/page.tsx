@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Copy, Check, Lock } from 'lucide-react';
+import { Sparkles, Copy, Check, Lock, MessageSquare } from 'lucide-react';
 import { ResultsDisplay } from './ResultsDisplay';
 import { FeaturesModal, PricingModal, AuthModal, FeedbackModal } from './components/NavbarModals';
 
@@ -25,6 +25,20 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [inputType, setInputType] = useState<'blog' | 'transcript' | 'notes'>('blog');
+  const hasShownExitModal = useRef(false);
+
+  // Exit-intent: detect mouse leaving the top of the viewport
+  useEffect(() => {
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (hasShownExitModal.current) return;
+      if (e.clientY <= 0) {
+        hasShownExitModal.current = true;
+        setShowFeedback(true);
+      }
+    };
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+  }, []);
 
   const handleRepurpose = async () => {
     if (!input.trim()) return;
@@ -354,6 +368,17 @@ export default function Home() {
       <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+
+      {/* Floating Feedback Button */}
+      <motion.button
+        onClick={() => setShowFeedback(true)}
+        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-indigo-600/30 transition-all shadow-lg shadow-indigo-500/25"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        aria-label="Send feedback"
+      >
+        <MessageSquare className="w-6 h-6" />
+      </motion.button>
     </main>
   );
 }
