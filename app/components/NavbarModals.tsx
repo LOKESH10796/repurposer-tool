@@ -330,11 +330,20 @@ function ModalOverlay({
 export function FeedbackModal({ isOpen, onClose }: ModalProps) {
   const [feedback, setFeedback] = useState("");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!feedback.trim()) return;
-    toast.success("Thanks for the feedback!");
-    setFeedback("");
-    onClose();
+    try {
+      await fetch("https://formspree.io/f/mkjwdvde", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: feedback }),
+      });
+      toast.success("Thanks for the feedback!");
+      setFeedback("");
+      onClose();
+    } catch {
+      toast.error("Failed to send feedback. Please try again.");
+    }
   };
 
   return (
