@@ -325,3 +325,35 @@ function ModalOverlay({
     </motion.div>
   );
 }
+
+// ─── Feedback Modal ───────────────────────────────────────────────
+export function FeedbackModal({ isOpen, onClose }: ModalProps) {
+  const [feedback, setFeedback] = useState("");
+
+  const handleSubmit = () => {
+    if (!feedback.trim()) return;
+    toast.success("Thanks for the feedback!");
+    setFeedback("");
+    onClose();
+  };
+
+  return (
+    <ModalOverlay onClose={onClose} title="Send Feedback">
+      <div className="space-y-4">
+        <textarea
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          placeholder="What can we improve? What do you love?..."
+          className="w-full h-32 bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-xl p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none"
+        />
+        <button
+          onClick={handleSubmit}
+          disabled={!feedback.trim()}
+          className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl font-semibold transition-all shadow-lg shadow-indigo-500/25"
+        >
+          Submit Feedback
+        </button>
+      </div>
+    </ModalOverlay>
+  );
+}

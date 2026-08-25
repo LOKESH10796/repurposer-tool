@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Copy, Check, Lock } from 'lucide-react';
 import { ResultsDisplay } from './ResultsDisplay';
-import { FeaturesModal, PricingModal, AuthModal } from './components/NavbarModals';
+import { FeaturesModal, PricingModal, AuthModal, FeedbackModal } from './components/NavbarModals';
 
 const generatingSteps = [
   "Analyzing context...",
@@ -23,6 +23,7 @@ export default function Home() {
   const [showFeatures, setShowFeatures] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [inputType, setInputType] = useState<'blog' | 'transcript' | 'notes'>('blog');
 
   const handleRepurpose = async () => {
@@ -100,6 +101,7 @@ export default function Home() {
         <div className="flex gap-4">
           <button onClick={() => setShowFeatures(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Features</button>
           <button onClick={() => setShowPricing(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Pricing</button>
+          <button onClick={() => setShowFeedback(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Feedback</button>
           <button onClick={() => setShowAuth(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Login</button>
         </div>
       </nav>
@@ -202,6 +204,22 @@ export default function Home() {
               )}
             </button>
           </div>
+        </motion.div>
+
+        {/* Social Proof */}
+        <motion.div
+          className="mt-6 flex items-center justify-center gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+        >
+          <div className="flex -space-x-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-slate-900" />
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 border-2 border-slate-900" />
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 border-2 border-slate-900" />
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 border-2 border-slate-900" />
+          </div>
+          <span className="text-slate-400 text-sm">Join 50+ creators saving 10 hours a week</span>
         </motion.div>
 
         {/* Generating States */}
@@ -335,6 +353,7 @@ export default function Home() {
       <FeaturesModal isOpen={showFeatures} onClose={() => setShowFeatures(false)} />
       <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
     </main>
   );
 }
