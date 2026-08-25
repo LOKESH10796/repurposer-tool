@@ -23,6 +23,7 @@ export default function Home() {
   const [showFeatures, setShowFeatures] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [inputType, setInputType] = useState<'blog' | 'transcript' | 'notes'>('blog');
 
   const handleRepurpose = async () => {
     if (!input.trim()) return;
@@ -39,7 +40,7 @@ export default function Home() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: input }),
+        body: JSON.stringify({ content: input, inputType }),
       });
       const data = await res.json();
       if (data.error) {
@@ -135,13 +136,34 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
         >
           <div className="flex gap-2 mb-4">
-            <button className="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-white rounded-lg text-sm font-medium transition-all border border-indigo-500/20">
+            <button
+              onClick={() => setInputType('blog')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
+                inputType === 'blog'
+                  ? 'bg-indigo-600/30 text-white border-indigo-500/40 shadow-lg shadow-indigo-500/25'
+                  : 'bg-slate-700/20 text-slate-400 border-white/5 hover:bg-slate-700/30 hover:text-slate-300'
+              }`}
+            >
               Blog Post
             </button>
-            <button className="px-4 py-2 bg-slate-700/20 hover:bg-slate-700/30 text-slate-200 rounded-lg text-sm font-medium transition-all border border-white/5">
+            <button
+              onClick={() => setInputType('transcript')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
+                inputType === 'transcript'
+                  ? 'bg-indigo-600/30 text-white border-indigo-500/40 shadow-lg shadow-indigo-500/25'
+                  : 'bg-slate-700/20 text-slate-400 border-white/5 hover:bg-slate-700/30 hover:text-slate-300'
+              }`}
+            >
               Transcript
             </button>
-            <button className="px-4 py-2 bg-slate-700/20 hover:bg-slate-700/30 text-slate-200 rounded-lg text-sm font-medium transition-all border border-white/5">
+            <button
+              onClick={() => setInputType('notes')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
+                inputType === 'notes'
+                  ? 'bg-indigo-600/30 text-white border-indigo-500/40 shadow-lg shadow-indigo-500/25'
+                  : 'bg-slate-700/20 text-slate-400 border-white/5 hover:bg-slate-700/30 hover:text-slate-300'
+              }`}
+            >
               Notes
             </button>
           </div>
@@ -149,7 +171,13 @@ export default function Home() {
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Paste your content here... (e.g., blog post, meeting notes, podcast transcript)"
+            placeholder={
+              inputType === 'blog'
+                ? 'Paste your blog URL or text...'
+                : inputType === 'transcript'
+                ? 'Paste your transcript (podcast, video, meeting)...'
+                : 'Paste your raw notes...'
+            }
             className="w-full h-48 bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-xl p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none"
           />
 
