@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Copy, Check, Lock } from 'lucide-react';
 import { ResultsDisplay } from './ResultsDisplay';
+import { FeaturesModal, PricingModal, AuthModal } from './components/NavbarModals';
 
 const generatingSteps = [
   "Analyzing context...",
@@ -19,6 +20,9 @@ export default function Home() {
   const [results, setResults] = useState<{ twitterThread: string[]; linkedinPost: string } | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [copied, setCopied] = useState<number | null>(null);
+  const [showFeatures, setShowFeatures] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   const handleRepurpose = async () => {
     if (!input.trim()) return;
@@ -93,9 +97,9 @@ export default function Home() {
           <span className="text-white font-semibold text-lg">Repurposer</span>
         </div>
         <div className="flex gap-4">
-          <a href="#" className="text-slate-400 hover:text-white transition-colors text-sm">Features</a>
-          <a href="#" className="text-slate-400 hover:text-white transition-colors text-sm">Pricing</a>
-          <a href="#" className="text-slate-400 hover:text-white transition-colors text-sm">Login</a>
+          <button onClick={() => setShowFeatures(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Features</button>
+          <button onClick={() => setShowPricing(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Pricing</button>
+          <button onClick={() => setShowAuth(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Login</button>
         </div>
       </nav>
 
@@ -298,6 +302,11 @@ export default function Home() {
       >
         <p>© 2026 Repurposer. Built with ❤️ for content creators.</p>
       </motion.footer>
+
+      {/* Modals */}
+      <FeaturesModal isOpen={showFeatures} onClose={() => setShowFeatures(false)} />
+      <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
+      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
     </main>
   );
 }

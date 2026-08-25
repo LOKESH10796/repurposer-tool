@@ -14,6 +14,16 @@ function getApiKeys(): string[] {
   return keys;
 }
 
+// Round-robin key rotation: persists across requests within the same process
+// This distributes load evenly across all keys to prevent rate-limit exhaustion
+let keyRotationIndex = 0;
+
+function getNextKeyIndex(numKeys: number): number {
+  const index = keyRotationIndex % numKeys;
+  keyRotationIndex = (keyRotationIndex + 1) % numKeys;
+  return index;
+}
+
 // Exponential backoff delay in milliseconds
 function getDelay(attempt: number): number {
   return Math.min(1000 * Math.pow(2, attempt), 10000); // max 10 seconds
@@ -201,8 +211,12 @@ export async function POST(request: NextRequest) {
   let lastError: unknown = null;
   let text: string | null = null;
 
-  // Try each API key in sequence until one succeeds
-  for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
+  // Rotate starting key across requests (round-robin) to distribute rate limits
+  const startIndex = apiKeys.length > 1 ? getNextKeyIndex(apiKeys.length) : 0;
+
+  // Try each API key in sequence (starting from the rotated index) until one succeeds
+  for (let i = 0; i < apiKeys.length; i++) {
+    const keyIndex = (startIndex + i) % apiKeys.length;
     const apiKey = apiKeys[keyIndex];
     const maskedKey = `...${apiKey.slice(-8)}`;
 
