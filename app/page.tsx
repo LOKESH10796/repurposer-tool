@@ -31,13 +31,21 @@ export default function Home() {
   useEffect(() => {
     const handleMouseLeave = (e: MouseEvent) => {
       if (hasShownExitModal.current) return;
-      if (e.clientY <= 0) {
+      if (e.clientY <= 10) {
         hasShownExitModal.current = true;
         setShowFeedback(true);
       }
     };
-    document.addEventListener('mouseleave', handleMouseLeave);
-    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+
+    // Safety delay: don't attach listener until 2500ms after mount
+    const timer = setTimeout(() => {
+      document.addEventListener('mouseleave', handleMouseLeave);
+    }, 2500);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+    };
   }, []);
 
   const handleRepurpose = async () => {
