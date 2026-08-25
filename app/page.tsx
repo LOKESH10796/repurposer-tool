@@ -1,4 +1,37 @@
+"use client";
+
+import { useState } from 'react';
+import { Suspense } from 'react';
+import { ResultsDisplay } from './ResultsDisplay';
+
 export default function Home() {
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<{ twitterThread: string[]; linkedinPost: string } | null>(null);
+
+  const handleRepurpose = async () => {
+    if (!input.trim()) return;
+    setLoading(true);
+    setResults(null);
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: input }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        setResults(data);
+      }
+    } catch (err) {
+      alert('Failed to connect to AI engine. Check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Navigation */}
@@ -42,58 +75,71 @@ export default function Home() {
           </div>
 
           <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Paste your content here... (e.g., blog post, meeting notes, podcast transcript)"
             className="w-full h-48 bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
           />
 
           <div className="flex justify-between items-center mt-4">
-            <span className="text-slate-500 text-sm">
-              {0} characters
-            </span>
-            <button className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-indigo-500/25">
-              Repurpose Content
+            <span className="text-slate-500 text-sm">{input.length} characters</span>
+            <button
+              onClick={handleRepurpose}
+              disabled={loading || !input.trim()}
+              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl font-semibold transition-all shadow-lg shadow-indigo-500/25"
+            >
+              {loading ? 'Repursing...' : 'Repurpose Content'}
             </button>
           </div>
         </div>
 
-        {/* Preview Section (Dummy State) */}
-        <div className="mt-16 max-w-4xl mx-auto">
-          <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-slate-400 text-sm font-medium">Ready to repurpose</span>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
-                <div className="w-8 h-8 bg-blue-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-blue-400 text-xs font-bold">𝕏</span>
-                </div>
-                <div>
-                  <div className="text-white text-sm font-medium mb-1">Twitter Thread</div>
-                  <div className="text-slate-400 text-xs">5 tweets ready to post</div>
-                </div>
+        {/* Results Section */}
+        {results && (
+          <Suspense fallback={<div className="text-white">Loading...</div>}>
+            <ResultsDisplay twitterThread={results.twitterThread} linkedinPost={results.linkedinPost} />
+          </Suspense>
+        )}
+
+        {/* Dummy Preview (hidden when results exist) */}
+        {!results && (
+          <div className="mt-16 max-w-4xl mx-auto">
+            <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-slate-400 text-sm font-medium">Ready to repurpose</span>
               </div>
-              <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
-                <div className="w-8 h-8 bg-sky-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-sky-400 text-xs font-bold">in</span>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
+                  <div className="w-8 h-8 bg-blue-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-400 text-xs font-bold">𝕏</span>
+                  </div>
+                  <div>
+                    <div className="text-white text-sm font-medium mb-1">Twitter Thread</div>
+                    <div className="text-slate-400 text-xs">5 tweets ready to post</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-white text-sm font-medium mb-1">LinkedIn Insight</div>
-                  <div className="text-slate-400 text-xs">Professional take with key takeaways</div>
+                <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
+                  <div className="w-8 h-8 bg-sky-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-sky-400 text-xs font-bold">in</span>
+                  </div>
+                  <div>
+                    <div className="text-white text-sm font-medium mb-1">LinkedIn Insight</div>
+                    <div className="text-slate-400 text-xs">Professional take with key takeaways</div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
-                <div className="w-8 h-8 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-purple-400 text-xs font-bold">✉️</span>
-                </div>
-                <div>
-                  <div className="text-white text-sm font-medium mb-1">Newsletter Draft</div>
-                  <div className="text-slate-400 text-xs">Engaging email with actionable insights</div>
+                <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
+                  <div className="w-8 h-8 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-purple-400 text-xs font-bold">✉️</span>
+                  </div>
+                  <div>
+                    <div className="text-white text-sm font-medium mb-1">Newsletter Draft</div>
+                    <div className="text-slate-400 text-xs">Engaging email with actionable insights</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* Footer */}
