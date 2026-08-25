@@ -87,6 +87,27 @@ function isKeyError(error: unknown): boolean {
   return false;
 }
 
+// Sanitize AI response: strip markdown fences and extract JSON
+function sanitizeJsonResponse(text: string): string {
+  let cleaned = text.trim();
+
+  // Remove markdown code fences if present
+  if (cleaned.startsWith('```json') || cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```[a-z]*\n/, '').replace(/\n```$/, '');
+  }
+
+  // If the response has text before the JSON object, extract just the JSON
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace > 0 || lastBrace < cleaned.length - 1) {
+    if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    }
+  }
+
+  return cleaned;
+}
+
 async function generateWithKey(
   apiKey: string,
   systemPrompt: string,
@@ -95,7 +116,7 @@ async function generateWithKey(
 ): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-3.6-flash',
     generationConfig: {
       temperature: 0.7,
       topP: 0.9,
@@ -145,121 +166,123 @@ async function generateWithKey(
 }
 
 export async function POST(request: NextRequest) {
+  let content: string;
+
+  // Parse request body with isolated error handling
   try {
-    const { content } = await request.json();
+    const body = await request.json();
+    content = body.content;
+  } catch (e) {
+    console.error('Request body parse error:', e);
+    return NextResponse.json(
+      { error: 'Invalid request body — expected JSON with a "content" field' },
+      { status: 400 }
+    );
+  }
 
-    if (!content || content.trim().length < 10) {
-      return NextResponse.json(
-        { error: 'Content is required and must be at least 10 characters' },
-        { status: 400 }
-      );
-    }
+  if (!content || content.trim().length < 10) {
+    return NextResponse.json(
+      { error: 'Content is required and must be at least 10 characters' },
+      { status: 400 }
+    );
+  }
 
-    const apiKeys = getApiKeys();
+  const apiKeys = getApiKeys();
 
-    if (apiKeys.length === 0) {
-      return NextResponse.json(
-        { error: 'No GEMINI_API_KEY configured' },
-        { status: 500 }
-      );
-    }
+  if (apiKeys.length === 0) {
+    return NextResponse.json(
+      { error: 'No GEMINI_API_KEY configured' },
+      { status: 500 }
+    );
+  }
 
-    const systemPrompt = `You are an elite ghostwriter. The user will provide raw content. Repurpose it into two things: 1) A highly engaging, punchy Twitter thread (3-5 tweets, use hooks). 2) A professional, insightful LinkedIn post with a strong hook and line breaks. Return ONLY a valid JSON object with two keys: 'twitterThread' (an array of strings) and 'linkedinPost' (a single string). Do not include markdown code blocks like \`\`\`json.`;
+  const systemPrompt = `You are an elite ghostwriter. The user will provide raw content. Repurpose it into two things: 1) A highly engaging, punchy Twitter thread (3-5 tweets, use hooks). 2) A professional, insightful LinkedIn post with a strong hook and line breaks. Return ONLY a valid JSON object with two keys: 'twitterThread' (an array of strings) and 'linkedinPost' (a single string). Do not include markdown code blocks like \`\`\`json.`;
 
-    let lastError: unknown = null;
-    let text: string | null = null;
+  let lastError: unknown = null;
+  let text: string | null = null;
 
-    // Try each API key in sequence until one succeeds
-    for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
-      const apiKey = apiKeys[keyIndex];
-      const maskedKey = `...${apiKey.slice(-8)}`;
+  // Try each API key in sequence until one succeeds
+  for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
+    const apiKey = apiKeys[keyIndex];
+    const maskedKey = `...${apiKey.slice(-8)}`;
 
-      try {
-        console.log(`Attempting Gemini API call with key ${keyIndex + 1}/${apiKeys.length} (${maskedKey})`);
-        text = await generateWithKey(apiKey, systemPrompt, content, 3);
-        console.log(`Gemini API call succeeded with key ${keyIndex + 1}/${apiKeys.length} (${maskedKey})`);
-        break; // Success — exit the key rotation loop
-      } catch (error) {
-        lastError = error;
+    try {
+      console.log(`Attempting Gemini API call with key ${keyIndex + 1}/${apiKeys.length} (${maskedKey})`);
+      text = await generateWithKey(apiKey, systemPrompt, content, 3);
+      console.log(`Gemini API call succeeded with key ${keyIndex + 1}/${apiKeys.length} (${maskedKey})`);
+      break; // Success — exit the key rotation loop
+    } catch (error) {
+      lastError = error;
 
-        // If it's a key-specific error (invalid/expired key), try the next key
-        if (isKeyError(error)) {
-          console.warn(
-            `API key ${keyIndex + 1}/${apiKeys.length} (${maskedKey}) is invalid or expired, rotating to next key:`,
-            getErrorMessage(error)
-          );
-          continue;
-        }
-
-        // For non-key errors (rate limits, server errors, etc.), we still try the next key
-        // as a different key might have a fresh quota
+      // If it's a key-specific error (invalid/expired key), try the next key
+      if (isKeyError(error)) {
         console.warn(
-          `Gemini API call failed with key ${keyIndex + 1}/${apiKeys.length} (${maskedKey}), rotating to next key:`,
+          `API key ${keyIndex + 1}/${apiKeys.length} (${maskedKey}) is invalid or expired, rotating to next key:`,
           getErrorMessage(error)
         );
         continue;
       }
-    }
 
-    if (!text) {
-      // All keys failed
-      console.error('All Gemini API keys failed. Last error:', lastError);
-
-      // Check if it was a key error to give better diagnostics
-      const isKeyRelated = isKeyError(lastError);
-
-      return NextResponse.json(
-        {
-          error: isKeyRelated
-            ? 'All API keys are invalid or expired. Please check your GEMINI_API_KEY configuration.'
-            : 'AI generation failed after exhausting all API keys and retries.',
-          details: getErrorMessage(lastError),
-        },
-        { status: 502 }
+      // For non-key errors (rate limits, server errors, etc.), we still try the next key
+      // as a different key might have a fresh quota
+      console.warn(
+        `Gemini API call failed with key ${keyIndex + 1}/${apiKeys.length} (${maskedKey}), rotating to next key:`,
+        getErrorMessage(error)
       );
+      continue;
     }
+  }
 
-    // Parse the AI response as JSON
-    try {
-      const parsed = JSON.parse(text);
+  if (!text) {
+    // All keys failed
+    console.error('All Gemini API keys failed. Last error:', lastError);
 
-      // Validate the response structure
-      if (
-        !parsed.twitterThread ||
-        !Array.isArray(parsed.twitterThread) ||
-        !parsed.linkedinPost ||
-        typeof parsed.linkedinPost !== 'string'
-      ) {
-        return NextResponse.json(
-          {
-            error: 'AI response did not match expected schema. Please try again with different content.',
-            rawResponse: text.substring(0, 500),
-          },
-          { status: 502 }
-        );
-      }
+    // Check if it was a key error to give better diagnostics
+    const isKeyRelated = isKeyError(lastError);
 
-      return NextResponse.json({
-        twitterThread: parsed.twitterThread,
-        linkedinPost: parsed.linkedinPost,
-      });
-    } catch (e) {
-      return NextResponse.json(
-        {
-          error: 'Failed to parse AI response as JSON',
-          rawResponse: text.substring(0, 500),
-        },
-        { status: 502 }
-      );
-    }
-  } catch (error) {
-    console.error('Generate error:', error);
     return NextResponse.json(
       {
-        error: 'AI generation failed',
-        details: getErrorMessage(error),
+        error: isKeyRelated
+          ? 'All API keys are invalid or expired. Please check your GEMINI_API_KEY configuration.'
+          : 'AI generation failed after exhausting all API keys and retries.',
+        details: getErrorMessage(lastError),
       },
-      { status: 500 }
+      { status: 502 }
+    );
+  }
+
+  // Parse the AI response as JSON
+  try {
+    const sanitized = sanitizeJsonResponse(text);
+    const parsed = JSON.parse(sanitized);
+
+    // Validate the response structure
+    if (
+      !parsed.twitterThread ||
+      !Array.isArray(parsed.twitterThread) ||
+      !parsed.linkedinPost ||
+      typeof parsed.linkedinPost !== 'string'
+    ) {
+      return NextResponse.json(
+        {
+          error: 'AI response did not match expected schema. Please try again with different content.',
+          rawResponse: sanitized.substring(0, 500),
+        },
+        { status: 502 }
+      );
+    }
+
+    return NextResponse.json({
+      twitterThread: parsed.twitterThread,
+      linkedinPost: parsed.linkedinPost,
+    });
+  } catch (e) {
+    return NextResponse.json(
+      {
+        error: 'Failed to parse AI response as JSON',
+        rawResponse: text.substring(0, 500),
+      },
+      { status: 502 }
     );
   }
 }
