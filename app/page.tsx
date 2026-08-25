@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Copy, Check, Lock, MessageSquare } from 'lucide-react';
 import { ResultsDisplay } from './ResultsDisplay';
-import { FeaturesModal, PricingModal, AuthModal, FeedbackModal } from './components/NavbarModals';
+import { FeaturesModal, PricingModal, FeedbackModal } from './components/NavbarModals';
+import { SignInButton, useUser, UserButton } from '@clerk/nextjs';
 
 const generatingSteps = [
   "Analyzing context...",
@@ -22,9 +23,9 @@ export default function Home() {
   const [copied, setCopied] = useState<number | null>(null);
   const [showFeatures, setShowFeatures] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [inputType, setInputType] = useState<'blog' | 'transcript' | 'notes'>('blog');
+  const { isSignedIn } = useUser();
 
   const handleRepurpose = async () => {
     if (!input.trim()) return;
@@ -102,7 +103,13 @@ export default function Home() {
           <button onClick={() => setShowFeatures(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Features</button>
           <button onClick={() => setShowPricing(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Pricing</button>
           <button onClick={() => setShowFeedback(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Feedback</button>
-          <button onClick={() => setShowAuth(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Login</button>
+          {!isSignedIn ? (
+            <SignInButton mode="modal">
+              <button className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Login</button>
+            </SignInButton>
+          ) : (
+            <UserButton />
+          )}
         </div>
       </nav>
 
@@ -352,7 +359,6 @@ export default function Home() {
       {/* Modals */}
       <FeaturesModal isOpen={showFeatures} onClose={() => setShowFeatures(false)} />
       <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
-      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
       {showFeedback && <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />}
 
       {/* Floating Feedback Button */}

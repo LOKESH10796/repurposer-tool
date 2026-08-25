@@ -4,6 +4,7 @@ import { Fragment, useState, useEffect } from "react";
 import { X, Check, Sparkles, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 
 interface ModalProps {
   isOpen: boolean;
@@ -328,6 +329,7 @@ function ModalOverlay({
 
 // ─── Feedback Modal ───────────────────────────────────────────────
 export function FeedbackModal({ isOpen, onClose }: ModalProps) {
+  const { user } = useUser();
   const [feedback, setFeedback] = useState("");
 
   const handleSubmit = async () => {
@@ -336,7 +338,11 @@ export function FeedbackModal({ isOpen, onClose }: ModalProps) {
       await fetch("https://formspree.io/f/mkjwdvde", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: feedback }),
+        body: JSON.stringify({
+          message: feedback,
+          email: user?.primaryEmailAddress?.emailAddress || "Anonymous",
+          name: user?.fullName || "Anonymous",
+        }),
       });
       toast.success("Thanks for the feedback!");
       setFeedback("");
