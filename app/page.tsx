@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Copy, Check, Lock, MessageSquare } from 'lucide-react';
 import { ResultsDisplay } from './ResultsDisplay';
@@ -25,28 +25,6 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [inputType, setInputType] = useState<'blog' | 'transcript' | 'notes'>('blog');
-  const hasShownExitModal = useRef(false);
-
-  // Exit-intent: detect mouse leaving the top of the viewport
-  useEffect(() => {
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (hasShownExitModal.current) return;
-      if (e.clientY <= 10) {
-        hasShownExitModal.current = true;
-        setShowFeedback(true);
-      }
-    };
-
-    // Safety delay: don't attach listener until 2500ms after mount
-    const timer = setTimeout(() => {
-      document.addEventListener('mouseleave', handleMouseLeave);
-    }, 2500);
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('mouseleave', handleMouseLeave);
-    };
-  }, []);
 
   const handleRepurpose = async () => {
     if (!input.trim()) return;
@@ -375,7 +353,7 @@ export default function Home() {
       <FeaturesModal isOpen={showFeatures} onClose={() => setShowFeatures(false)} />
       <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
-      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+      {showFeedback && <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />}
 
       {/* Floating Feedback Button */}
       <motion.button
