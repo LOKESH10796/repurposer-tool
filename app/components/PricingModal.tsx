@@ -18,7 +18,7 @@ export function PricingModal({ twitterContent, linkedinContent }: PricingModalPr
           </p>
           <div className="text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-6 glow-text">$15</div>
           <a
-            href="https://gumroad.com/a/buy"
+            href="https://loki1996.gumroad.com/l/repurposer"
             target="_blank"
             rel="noopener noreferrer"
             className="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3 px-6 rounded-xl font-semibold transition-all shadow-lg shadow-indigo-500/25"

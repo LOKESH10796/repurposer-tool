@@ -5,11 +5,12 @@ import { TwitterThread } from './components/TwitterThread';
 import { LinkedInPost } from './components/LinkedInPost';
 import { PricingModal } from './components/PricingModal';
 
-export function ResultsDisplay({ twitterThread, linkedinPost, onCopy, copied }: { twitterThread: string[]; linkedinPost: string; onCopy: (text: string, index: number) => void; copied: number | null }) {
+export function ResultsDisplay({ twitterThread, linkedinPost, onCopy, copied, previewOnly }: { twitterThread: string[]; linkedinPost: string; onCopy: (text: string, index: number) => void; copied: number | null; previewOnly?: boolean }) {
   const searchParams = useSearchParams();
   const isPaid = searchParams.get('paid') === 'true';
+  const showFull = isPaid || previewOnly === false;
 
-  if (isPaid) {
+  if (showFull) {
     return (
       <div className="space-y-6">
         <TwitterThread tweets={twitterThread} onCopy={onCopy} copied={copied} />

@@ -137,7 +137,7 @@ export function PricingModal({ isOpen, onClose }: ModalProps) {
                 </li>
               </ul>
               <a
-                href="https://gumroad.com/a/buy"
+                href="https://loki1996.gumroad.com/l/repurposer"
                 className="relative mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
               >
                 Get Lifetime Pass

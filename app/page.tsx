@@ -27,13 +27,27 @@ export default function Home() {
   const [inputType, setInputType] = useState<'blog' | 'transcript' | 'notes'>('blog');
   const { isSignedIn } = useUser();
 
+  // Paid state: bypass free tier limits
+  const [paid, setPaid] = useState(false);
+  useEffect(() => {
+    const search = window.location.search;
+    if (search.includes('paid=true')) {
+      setPaid(true);
+    }
+  }, []);
+
+  const isProActive = paid || isSignedIn;
+
   const handleRepurpose = async () => {
     if (!input.trim()) return;
+    if (!isProActive && !paid) {
+      alert('Please sign in or upgrade to generate content.');
+      return;
+    }
     setLoading(true);
     setResults(null);
     setCurrentStep(0);
 
-    // Cycle through generating steps
     const interval = setInterval(() => {
       setCurrentStep((prev) => (prev + 1) % generatingSteps.length);
     }, 800);
@@ -66,28 +80,19 @@ export default function Home() {
 
   return (
     <main className="min-h-screen relative overflow-hidden">
-      {/* Animated background grid */}
       <div className="fixed inset-0 grid-overlay z-0" />
 
-      {/* Floating orbs */}
       <motion.div
         className="fixed top-20 left-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"
-        animate={{
-          x: [0, 30, -20, 0],
-          y: [0, -30, 20, 0],
-        }}
+        animate={{ x: [0, 30, -20, 0], y: [0, -30, 20, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="fixed bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
-        animate={{
-          x: [0, -20, 30, 0],
-          y: [0, 30, -20, 0],
-        }}
+        animate={{ x: [0, -20, 30, 0], y: [0, 30, -20, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Navigation */}
       <nav className="container mx-auto px-6 py-4 flex justify-between items-center relative z-10">
         <div className="flex items-center gap-2">
           <motion.div
@@ -110,10 +115,12 @@ export default function Home() {
           ) : (
             <UserButton />
           )}
+          {paid && !isSignedIn && (
+            <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">Pro Active</span>
+          )}
         </div>
       </nav>
 
-      {/* Hero Section */}
       <motion.section
         className="container mx-auto px-6 py-20 text-center relative z-10"
         initial={{ opacity: 0, y: 20 }}
@@ -137,181 +144,85 @@ export default function Home() {
           Paste your blog post, transcript, or rough notes. Get ready-to-post Twitter threads, LinkedIn insights, and newsletters in seconds.
         </motion.p>
 
-        {/* Input Card */}
         <motion.div
-          className="max-w-4xl mx-auto glass-card rounded-2xl p-6 border border-white/10"
+          className="max-w-3xl mx-auto glass rounded-2xl p-8 shadow-2xl border border-gray-700/50"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
         >
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-3 mb-6">
             <button
               onClick={() => setInputType('blog')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
-                inputType === 'blog'
-                  ? 'bg-indigo-600/30 text-white border-indigo-500/40 shadow-lg shadow-indigo-500/25'
-                  : 'bg-slate-700/20 text-slate-400 border-white/5 hover:bg-slate-700/30 hover:text-slate-300'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${inputType === 'blog' ? 'bg-indigo-600 text-white' : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'}`}
             >
-              Blog Post
+              <span className="w-5 h-5 bg-orange-500 rounded-sm flex items-center justify-center text-xs font-bold">B</span> Blog
             </button>
             <button
               onClick={() => setInputType('transcript')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
-                inputType === 'transcript'
-                  ? 'bg-indigo-600/30 text-white border-indigo-500/40 shadow-lg shadow-indigo-500/25'
-                  : 'bg-slate-700/20 text-slate-400 border-white/5 hover:bg-slate-700/30 hover:text-slate-300'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${inputType === 'transcript' ? 'bg-indigo-600 text-white' : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'}`}
             >
-              Transcript
+              <span className="w-5 h-5 bg-purple-500 rounded-sm flex items-center justify-center text-xs font-bold">T</span> Transcript
             </button>
             <button
               onClick={() => setInputType('notes')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
-                inputType === 'notes'
-                  ? 'bg-indigo-600/30 text-white border-indigo-500/40 shadow-lg shadow-indigo-500/25'
-                  : 'bg-slate-700/20 text-slate-400 border-white/5 hover:bg-slate-700/30 hover:text-slate-300'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${inputType === 'notes' ? 'bg-indigo-600 text-white' : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'}`}
             >
-              Notes
+              <span className="w-5 h-5 bg-blue-500 rounded-sm flex items-center justify-center text-xs font-bold">N</span> Notes
             </button>
           </div>
-
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              inputType === 'blog'
-                ? 'Paste your blog URL or text...'
-                : inputType === 'transcript'
-                ? 'Paste your transcript (podcast, video, meeting)...'
-                : 'Paste your raw notes...'
-            }
-            className="w-full h-48 bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-xl p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none"
+            placeholder={inputType === 'blog' ? "Paste your blog post here..." : inputType === 'transcript' ? "Paste your video/audio transcript here..." : "Paste your notes here..."}
+            className="w-full h-48 bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-xl p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none"
           />
-
-          <div className="flex justify-between items-center mt-4">
-            <span className="text-slate-500 text-sm">{input.length} characters</span>
+          <div className="flex gap-3 mt-4">
             <button
               onClick={handleRepurpose}
-              disabled={loading || !input.trim()}
-              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl font-semibold transition-all shadow-lg shadow-indigo-500/25"
+              disabled={!input.trim() || loading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl font-semibold transition-all shadow-lg shadow-indigo-500/25"
             >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <motion.div
-                    className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  />
-                  Generating...
-                </span>
-              ) : (
-                'Repurpose Content'
-              )}
+              {loading ? 'Generating...' : 'Generate'}
+            </button>
+            <button
+              onClick={() => setShowPricing(true)}
+              className="px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl font-semibold transition-all border border-white/10"
+            >
+              Upgrade
             </button>
           </div>
-        </motion.div>
-
-        {/* Social Proof */}
-        <motion.div
-          className="mt-6 flex items-center justify-center gap-3"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-        >
-          <div className="flex -space-x-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-slate-900" />
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 border-2 border-slate-900" />
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 border-2 border-slate-900" />
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 border-2 border-slate-900" />
-          </div>
-          <span className="text-slate-400 text-sm">Join 50+ creators saving 10 hours a week</span>
-        </motion.div>
-
-        {/* Generating States */}
-        <AnimatePresence mode="wait">
-          {loading && (
-            <motion.div
-              key={currentStep}
-              className="mt-8 max-w-md mx-auto"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="glass-card rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <motion.div
-                    className="w-2 h-2 bg-indigo-500 rounded-full"
-                    animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  />
-                  <span className="text-slate-300 font-medium">Generating your content...</span>
-                </div>
-                <div className="space-y-2">
-                  {generatingSteps.map((step, index) => (
-                    <motion.div
-                      key={step}
-                      className={`flex items-center gap-2 text-sm ${
-                        index === currentStep
-                          ? 'text-indigo-400'
-                          : index < currentStep
-                          ? 'text-slate-500'
-                          : 'text-slate-700'
-                      }`}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {index < currentStep ? (
-                        <Check className="w-4 h-4" />
-                      ) : index === currentStep ? (
-                        <motion.div
-                          className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full"
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                        />
-                      ) : null}
-                      <span className={index === currentStep ? 'font-medium' : ''}>{step}</span>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
+          {!isProActive && !paid && (
+            <p className="text-xs text-slate-500 mt-3">Sign in or upgrade to unlock unlimited generation</p>
           )}
-        </AnimatePresence>
+          {isProActive && paid && (
+            <p className="text-xs text-green-400 mt-3">✓ Lifetime Pro Active — unlimited generation</p>
+          )}
+        </motion.div>
+      </motion.section>
 
-        {/* Results Section */}
-        {results && (
+      <motion.div
+        className="container mx-auto px-6 py-20 relative z-10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 1 }}
+      >
+        <h2 className="text-3xl font-bold text-white mb-8 text-center">Your Content, Ready to Post</h2>
+        {results ? (
           <motion.div
-            className="mt-16 max-w-4xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.6, delay: 1.2 }}
           >
             <ResultsDisplay
               twitterThread={results.twitterThread}
               linkedinPost={results.linkedinPost}
+              previewOnly={false}
               onCopy={handleCopy}
               copied={copied}
             />
-          </motion.div>
-        )}
-
-        {/* Dummy Preview (hidden when results exist) */}
-        {!results && !loading && (
-          <motion.div
-            className="mt-16 max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <div className="glass-card rounded-2xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-slate-400 text-sm font-medium">Ready to repurpose</span>
-              </div>
+            <div className="glass rounded-2xl p-8 border border-white/5">
+              <h3 className="text-xl font-bold text-white mb-4">Preview of all formats</h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
                   <div className="w-8 h-8 bg-blue-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -319,7 +230,7 @@ export default function Home() {
                   </div>
                   <div>
                     <div className="text-white text-sm font-medium mb-1">Twitter Thread</div>
-                    <div className="text-slate-400 text-xs">5 tweets ready to post</div>
+                    <div className="text-slate-400 text-xs">@You</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
@@ -343,25 +254,31 @@ export default function Home() {
               </div>
             </div>
           </motion.div>
+        ) : (
+          <motion.div
+            className="max-w-5xl mx-auto text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1.4 }}
+          >
+            <p className="text-slate-500 text-lg">Paste your content above and click Generate to see your repurposed content</p>
+          </motion.div>
         )}
-      </motion.section>
+      </motion.div>
 
-      {/* Footer */}
       <motion.footer
         className="container mx-auto px-6 py-8 text-center text-slate-500 text-sm relative z-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.8 }}
+        transition={{ duration: 0.6, delay: 1.8 }}
       >
         <p>© 2026 Repurposer. Built with ❤️ for content creators.</p>
       </motion.footer>
 
-      {/* Modals */}
       <FeaturesModal isOpen={showFeatures} onClose={() => setShowFeatures(false)} />
       <PricingModal isOpen={showPricing} onClose={() => setShowPricing(false)} />
       {showFeedback && <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />}
 
-      {/* Floating Feedback Button */}
       <motion.button
         onClick={() => setShowFeedback(true)}
         className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-indigo-600/30 transition-all shadow-lg shadow-indigo-500/25"
