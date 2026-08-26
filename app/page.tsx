@@ -25,22 +25,14 @@ export default function Home() {
   const [showPricing, setShowPricing] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [inputType, setInputType] = useState<'blog' | 'transcript' | 'notes'>('blog');
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
 
-  // Paid state: bypass free tier limits
-  const [paid, setPaid] = useState(false);
-  useEffect(() => {
-    const search = window.location.search;
-    if (search.includes('paid=true')) {
-      setPaid(true);
-    }
-  }, []);
-
-  const isProActive = paid || isSignedIn;
+  // Pro = signed-in user with pro metadata (set securely by Gumroad webhook)
+  const isProActive = user?.publicMetadata?.pro === true;
 
   const handleRepurpose = async () => {
     if (!input.trim()) return;
-    if (!isProActive && !paid) {
+    if (!isProActive) {
       alert('Please sign in or upgrade to generate content.');
       return;
     }
