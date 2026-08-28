@@ -8,7 +8,7 @@ export function Testimonials() {
     {
       name: "Alex Rivera",
       handle: "@aiverreraw",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face&auto=format",
       role: "SaaS Founder",
       content: "Repurposer cut my content creation time from 8 hours/week to 45 minutes. I now post 3x more consistently and my engagement jumped 220%. Best $15 I've ever spent.",
       rating: 5,
@@ -18,7 +18,7 @@ export function Testimonials() {
     {
       name: "Jamie Lin",
       handle: "@jamielin",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b6f1?w=100&h=100&fit=crop&crop=face",
+      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face&auto=format",
       role: "Content Creator",
       content: "As someone who creates 5+ pieces of content weekly, this tool is magic. Takes my raw ideas and turns them into platform-perfect posts while I focus on strategy.",
       rating: 5,
@@ -28,7 +28,7 @@ export function Testimonials() {
     {
       name: "Taylor Chen",
       handle: "@taylorsays",
-      avatar: "https://images.unsplash.com/photo-1500648767791-3fe3c8463e70?w=100&h=100&fit=crop&crop=face",
+      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face&auto=format",
       role: "Marketing Director",
       content: "Our team uses Repurposer for all client content. The consistency and quality are unmatched. Saved us 15+ hours weekly on content adaptation alone.",
       rating: 5,
@@ -38,7 +38,7 @@ export function Testimonials() {
     {
       name: "Morgan James",
       handle: "@morgjames",
-      avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop&crop=face",
+      avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=100&h=100&fit=crop&crop=face&auto=format",
       role: "Freelance Writer",
       content: "I was skeptical about AI writing tools until I tried this. It doesn't sound robotic at all — it captures my voice and amplifies it. Worth 10x the price.",
       rating: 5,
@@ -80,7 +80,11 @@ export function Testimonials() {
               <img
                 src={t.avatar}
                 alt={t.name}
-                onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(t.name) + '&background=6366f1&color=fff&size=100'; }}
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(t.name) + '&background=6366f1&color=fff&size=100&bold=true';
+                }}
                 className="w-10 h-10 rounded-full border-2 border-white/20 object-cover"
               />
               <div className="flex-1">
