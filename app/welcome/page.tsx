@@ -41,38 +41,41 @@ export default function Welcome() {
   // Trigger confetti animation
   useEffect(() => {
     if (reducedMotion) return;
-    const duration = 2 * 1000;
-    const end = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+    // Only run confetti in the browser
+    if (typeof window === 'undefined') return;
 
-    function randomInRange(min: number, max: number) {
-      return Math.random() * (max - min) + min;
-    }
+    import('canvas-confetti').then(({ default: confetti }) => {
+      const duration = 2 * 1000;
+      const end = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
-    const interval = setInterval(() => {
-      const timeLeft = end - Date.now();
-
-      if (timeLeft <= 0) {
-        clearInterval(interval);
-        return;
+      function randomInRange(min: number, max: number) {
+        return Math.random() * (max - min) + min;
       }
 
-      const particleCount = 50 * (timeLeft / duration);
-      // since particles fall down, start a bit higher than random
-      (() => {
-        // tslint:disable-next-line:no-any
-        (window as any).confetti(
-          Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } })
-        );
+      const interval = setInterval(() => {
+        const timeLeft = end - Date.now();
+
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+        // since particles fall down, start a bit higher than random
         (() => {
-          // tslint:disable-next-line:no-any
-          (window as any).confetti(
-            Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } })
+          confetti(
+            Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } })
           );
+          (() => {
+            confetti(
+              Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } })
+            );
+          })();
         })();
-      })();
-    }, 250);
-    return () => clearInterval(interval);
+      }, 250);
+      return () => clearInterval(interval);
+    });
   }, [reducedMotion]);
 
   return (
