@@ -6,7 +6,7 @@ import {
   Sparkles, Copy, Check, Lock, MessageSquare, Crown, Rocket,
   Zap, Brain, ArrowRight, Sparkle, Star, Flame, Shield,
   TrendingUp, CheckCircle2, Infinity as InfinityIcon, Clock,
-  Users, Award, Heart, X, Menu
+  Users, Award, Heart, X, Menu, Trophy
 } from 'lucide-react';
 import { ResultsDisplay } from './ResultsDisplay';
 import { FeaturesModal, PricingModal, FeedbackModal } from './components/NavbarModals';
@@ -153,6 +153,17 @@ export default function Home() {
           </motion.button>
         </div>
 
+        {/* Mobile Nav - visible on small screens */}
+        <div className="md:hidden flex items-center gap-2">
+          {!isSignedIn ? (
+            <SignInButton mode="modal">
+              <button className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Login</button>
+            </SignInButton>
+          ) : (
+            <UserButton />
+          )}
+        </div>
+
         {/* Mobile Menu Button */}
         <button
           className="md:hidden text-white"
@@ -196,8 +207,39 @@ export default function Home() {
         onSampleClick={handleSampleClick}
       />
 
-      {/* Stats Bar */}
-      <StatsBar />
+      {/* Stats Bar - Mobile optimized */}
+      <section className="container mx-auto px-6 py-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 max-w-5xl mx-auto text-center">
+          <div className="py-4 border-r border-white/5 md:border-0 md:border-r md:border-white/5 md:py-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <TrendingUp className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div className="text-3xl md:text-4xl font-bold text-white">1,247</div>
+            <p className="text-xs md:text-sm text-slate-400">Content pieces today</p>
+          </div>
+          <div className="py-4 border-r border-white/5 md:border-0 md:border-r md:border-white/5 md:py-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Zap className="w-6 h-6 text-amber-400" />
+            </div>
+            <div className="text-3xl md:text-4xl font-bold text-white">8.3m</div>
+            <p className="text-xs md:text-sm text-slate-400">Total reach</p>
+          </div>
+          <div className="py-4 border-r border-white/5 md:border-0 md:border-r md:border-white/5 md:py-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Shield className="w-6 h-6 text-sky-400" />
+            </div>
+            <div className="text-3xl md:text-4xl font-bold text-white">94%</div>
+            <p className="text-xs md:text-sm text-slate-400">Engagement boost</p>
+          </div>
+          <div className="py-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Trophy className="w-6 h-6 text-pink-400" />
+            </div>
+            <div className="text-3xl md:text-4xl font-bold text-white">2.1k</div>
+            <p className="text-xs md:text-sm text-slate-400">Happy creators</p>
+          </div>
+        </div>
+      </section>
 
       {/* Live Demo Preview */}
       <LiveDemo />

@@ -100,21 +100,24 @@ export function PricingCard({
               <Crown className="w-4 h-4 inline-block mr-2" />
               {cta}
             </motion.a>
-          ) : (
+          ) : variant === 'premium' ? (
             <motion.button
               onClick={() => alert('Coming soon!')}
-              className={`w-full btn-premium ${variant === 'premium' ? 'btn-gold' : 'btn-secondary'} py-3 mt-6 flex items-center justify-center gap-2 text-base font-semibold`}
-              whileHover={{ scale: variant === 'premium' ? 1.05 : 1.03 }}
+              className="w-full btn-premium btn-gold py-3 mt-6 flex items-center justify-center gap-2 text-base font-semibold"
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
             >
-              {variant === 'premium' ? (
-                <>
-                  <Crown className="w-4 h-4 inline-block mr-2" />
-                  {cta}
-                </>
-              ) : (
-                <>{cta}</>
-              )}
+              <Crown className="w-4 h-4 inline-block mr-2" />
+              {cta}
+            </motion.button>
+          ) : (
+            <motion.button
+              onClick={() => window.location.href = '/#pricing'}
+              className="w-full btn-premium btn-secondary py-3 mt-6 flex items-center justify-center gap-2 text-base font-semibold"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {cta}
             </motion.button>
           )}
           

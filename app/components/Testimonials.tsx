@@ -80,6 +80,7 @@ export function Testimonials() {
               <img
                 src={t.avatar}
                 alt={t.name}
+                onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(t.name) + '&background=6366f1&color=fff&size=100'; }}
                 className="w-10 h-10 rounded-full border-2 border-white/20 object-cover"
               />
               <div className="flex-1">
