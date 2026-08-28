@@ -113,9 +113,11 @@ export default function Welcome() {
         </p>
 
         {!isPro && !checked ? (
-          <p className="text-sm text-white/80">
-            We're verifying your purchase... <span className="animate-pulse">•••</span>
-          </p>
+          <>
+            <p className="text-sm text-white/80">
+              We're verifying your purchase... <span className="animate-pulse">•••</span>
+            </p>
+          </>
         ) : isPro ? (
           <>
             <p className="text-sm text-white/80">
@@ -148,20 +150,22 @@ export default function Welcome() {
             </div>
           </>
         ) : (
-          <p className="text-sm text-white/80">
-            It looks like your purchase hasn't been processed yet. Please check your email for the receipt and try again in a moment.
-          </p>
-          <motion.button
-            onClick={() => {
-              window.location.href = '/#pricing';
-            }}
-            className="btn-premium btn-secondary px-6 py-3 text-base font-semibold"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Zap className="w-5 h-5 inline-block mr-2" />
-            Try Again
-          </motion.button>
+          <>
+            <p className="text-sm text-white/80">
+              It looks like your purchase hasn't been processed yet. Please check your email for the receipt and try again in a moment.
+            </p>
+            <motion.button
+              onClick={() => {
+                window.location.href = '/#pricing';
+              }}
+              className="btn-premium btn-secondary px-6 py-3 text-base font-semibold"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Zap className="w-5 h-5 inline-block mr-2" />
+              Try Again
+            </motion.button>
+          </>
         )}
       </motion.div>
 
