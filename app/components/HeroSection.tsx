@@ -16,6 +16,8 @@ interface HeroSectionProps {
   onGenerate: () => void;
   isProActive: boolean;
   onSampleClick: (sample: string) => void;
+  formats: string[];
+  setFormats: (v: string[]) => void;
 }
 
 const samples = [
@@ -39,6 +41,7 @@ const samples = [
 export function HeroSection({
   loading, input, setInput, inputType, setInputType, wordCount,
   onGenerate, isProActive, onSampleClick,
+  formats, setFormats,
 }: HeroSectionProps) {
   const [showSamples, setShowSamples] = useState(false);
 
@@ -125,6 +128,41 @@ export function HeroSection({
                 >
                   <Icon className="w-4 h-4" />
                   {t.label}
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Format selector */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {[
+              { id: 'twitter', label: '𝕏 Thread', icon: Users },
+              { id: 'linkedin', label: 'in Post', icon: TrendingUp },
+              { id: 'newsletter', label: '✉️ Newsletter', icon: Star },
+              { id: 'instagram', label: '📷 Instagram', icon: Sparkles },
+              { id: 'reddit', label: '🔴 Reddit', icon: Zap },
+              { id: 'threads', label: '↗️ Threads', icon: Clock },
+            ].map((f) => {
+              const Icon = f.icon;
+              const active = formats.includes(f.id);
+              return (
+                <motion.button
+                  key={f.id}
+                  onClick={() => setFormats(active
+                    ? formats.filter(x => x !== f.id)
+                    : [...formats, f.id]
+                  )}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border $
+                    {active
+                      ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                      : 'bg-slate-800/40 text-slate-400 hover:text-slate-200 hover:bg-slate-700/40 border-white/5'
+                    }
+                  `}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {f.label}
                 </motion.button>
               );
             })}

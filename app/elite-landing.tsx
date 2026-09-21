@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Copy, Check, Lock, MessageSquare, ArrowRight, Zap, Globe, Shield, Award, Mail, Star, TrendingUp, Target } from 'lucide-react';
-import { ResultsDisplay } from './ResultsDisplay';
+import { ResultsDisplay, type GeneratedContent } from './components/ResultsDisplay';
 import { SignInButton, useUser, UserButton } from '@clerk/nextjs';
 
 // ─── Professional Color Palette ─────────────────────────────────
@@ -164,10 +164,21 @@ function HeroSection({ onGetStarted }: { onGetStarted: () => void }) {
 }
 
 // ─── Input Card ─────────────────────────────────────────────────
-function InputCard({ onGenerate }: { onGenerate: () => void }) {
+function InputCard({ onGenerate }: { onGenerate: (content: string, inputType: string, formats: string[]) => Promise<void> }) {
   const [input, setInput] = useState('');
   const [inputType, setInputType] = useState<'blog' | 'transcript' | 'notes'>('blog');
   const [loading, setLoading] = useState(false);
+  const [formats, setFormats] = useState<string[]>(['twitter', 'linkedin', 'newsletter', 'instagram', 'reddit', 'threads']);
+
+  const handleGenerate = async () => {
+    if (!input.trim() || loading) return;
+    setLoading(true);
+    try {
+      await onGenerate(input, inputType, formats);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <motion.div
@@ -191,6 +202,34 @@ function InputCard({ onGenerate }: { onGenerate: () => void }) {
         ))}
       </div>
 
+      {/* Format selector */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {[
+          { id: 'twitter', label: '𝕏 Thread' },
+          { id: 'linkedin', label: 'in Post' },
+          { id: 'newsletter', label: '✉️ Newsletter' },
+          { id: 'instagram', label: '📷 Instagram' },
+          { id: 'reddit', label: '🔴 Reddit' },
+          { id: 'threads', label: '↗️ Threads' },
+        ].map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFormats(formats.includes(f.id)
+              ? formats.filter(x => x !== f.id)
+              : [...formats, f.id]
+            )}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border $
+              {formats.includes(f.id)
+                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                : 'bg-slate-800/40 text-slate-400 hover:text-slate-200 hover:bg-slate-700/40 border-white/5'
+              }
+            `}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
@@ -200,7 +239,7 @@ function InputCard({ onGenerate }: { onGenerate: () => void }) {
 
       <div className="flex gap-3 mt-4">
         <button
-          onClick={onGenerate}
+          onClick={handleGenerate}
           disabled={!input.trim() || loading}
           className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/25"
         >
@@ -215,7 +254,7 @@ function InputCard({ onGenerate }: { onGenerate: () => void }) {
 }
 
 // ─── Results Section ────────────────────────────────────────────
-function ResultsSection({ results }: { results: { twitterThread: string[]; linkedinPost: string } | null }) {
+function ResultsSection({ results }: { results: GeneratedContent | null }) {
   if (!results) return null;
 
   return (
@@ -228,8 +267,12 @@ function ResultsSection({ results }: { results: { twitterThread: string[]; linke
       <h2 className="text-3xl font-bold text-white mb-8 text-center">Your Content, Ready to Post</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
         <ResultsDisplay
-          twitterThread={results.twitterThread}
-          linkedinPost={results.linkedinPost}
+          twitterThread={results?.twitterThread}
+          linkedinPost={results?.linkedinPost}
+          newsletter={results?.newsletter}
+          instagramCaption={results?.instagramCaption}
+          redditPost={results?.redditPost}
+          threadsPost={results?.threadsPost}
           previewOnly={false}
           onCopy={() => {}}
           copied={null}
@@ -449,9 +492,22 @@ export default function EliteLanding() {
               <ArrowRight className="w-4 h-4 rotate-180" />
               Back
             </button>
-            <InputCard onGenerate={async () => {
-              // Placeholder - would connect to actual API
-              setResults({ twitterThread: ["Tweet 1", "Tweet 2"], linkedinPost: "LinkedIn post" });
+            <InputCard onGenerate={async (content: string, inputType: string, formats: string[]) => {
+              const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                  content, 
+                  inputType,
+                  formats
+                }),
+              });
+              const data = await res.json();
+              if (data.error) {
+                alert(data.error);
+              } else {
+                setResults(data);
+              }
             }} />
           </motion.section>
           <ResultsSection results={results} />

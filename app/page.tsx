@@ -8,7 +8,9 @@ import {
   TrendingUp, CheckCircle2, Infinity as InfinityIcon, Clock,
   Users, Award, Heart, X, Menu, Trophy
 } from 'lucide-react';
-import { ResultsDisplay } from './ResultsDisplay';
+import { ResultsDisplay, type GeneratedContent, type RefineModifier } from './components/ResultsDisplay';
+import { HookLab, type HookOption } from './components/HookLab';
+import { detectInputKind, extractFirstUrl } from '@/lib/input-resolver';
 import { FeaturesModal, PricingModal, FeedbackModal } from './components/NavbarModals';
 import { SignInButton, useUser, UserButton } from '@clerk/nextjs';
 import { PricingCard } from './components/PricingCard';
@@ -33,7 +35,7 @@ const generatingSteps = [
 export default function Home() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<{ twitterThread: string[]; linkedinPost: string } | null>(null);
+  const [results, setResults] = useState<GeneratedContent | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [copied, setCopied] = useState<number | null>(null);
   const [showFeatures, setShowFeatures] = useState(false);
@@ -41,9 +43,26 @@ export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAllFormats, setShowAllFormats] = useState(false);
   const [inputType, setInputType] = useState<'blog' | 'transcript' | 'notes'>('blog');
+  const [formats, setFormats] = useState<string[]>(['twitter', 'linkedin', 'newsletter', 'instagram', 'reddit', 'threads']);
   const [wordCount, setWordCount] = useState(0);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [voiceApplied, setVoiceApplied] = useState(false);
+  const [phase, setPhase] = useState<'idle' | 'extracting' | 'hooks' | 'streaming' | 'done'>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
+  const [hookOptions, setHookOptions] = useState<HookOption[]>([]);
+  const [selectedHook, setSelectedHook] = useState<number | null>(null);
+  const [resolvedContent, setResolvedContent] = useState('');
+  const [sourceLabel, setSourceLabel] = useState('');
+  const [streamingFormats, setStreamingFormats] = useState<string[]>([]);
+  const [refiningFormat, setRefiningFormat] = useState<string | null>(null);
   const { isSignedIn, user } = useUser();
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('voiceDNA') || localStorage.getItem('voiceDNA');
+      setVoiceApplied(!!raw);
+    } catch { /* storage unavailable */ }
+  }, []);
 
   const isProActive = user?.publicMetadata?.pro === true;
   const isPaid = isProActive;
@@ -52,6 +71,24 @@ export default function Home() {
     setWordCount(input.trim().split(/\s+/).filter(Boolean).length);
   }, [input]);
 
+  const getVoiceDna = (): unknown => {
+    try {
+      const raw = sessionStorage.getItem('voiceDNA') || localStorage.getItem('voiceDNA');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+
+  const splitThreadText = (t: string): string[] =>
+    t.split(/---TWEET---/).map((s) => s.trim()).filter(Boolean);
+
+  const parseRedditText = (t: string): { title: string; body: string } => {
+    const m = t.match(/^\s*Title:\s*(.+?)\s*\n+([\s\S]*)$/);
+    if (m) return { title: m[1].trim(), body: m[2].trim() };
+    const lines = t.split('\n').filter((l) => l.trim());
+    return { title: (lines[0] ?? 'Repurposed post').slice(0, 200), body: lines.slice(1).join('\n').trim() || t };
+  };
+
+  // Step 1: resolve omni-input (URL / YouTube / text) then fetch hook pitches.
   const handleRepurpose = async () => {
     if (!input.trim()) return;
     if (!isProActive) {
@@ -60,6 +97,9 @@ export default function Home() {
     }
     setLoading(true);
     setResults(null);
+    setHookOptions([]);
+    setSelectedHook(null);
+    setSourceLabel('');
     setCurrentStep(0);
 
     const interval = setInterval(() => {
@@ -67,21 +107,48 @@ export default function Home() {
     }, 700);
 
     try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: input, inputType }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        alert(data.error);
-      } else {
-        setResults(data);
-        // Scroll to results
-        setTimeout(() => {
-          document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+      // --- Omni-input resolution ---
+      const kind = detectInputKind(input);
+      let effective = input;
+      let effectiveType = inputType;
+      if (kind === 'youtube' || kind === 'url') {
+        setPhase('extracting');
+        const url = extractFirstUrl(input) ?? input.trim();
+        setStatusMessage(kind === 'youtube' ? '📺 Pulling YouTube transcript…' : '🔗 Reading URL via Jina Reader…');
+        const res = await fetch(kind === 'youtube' ? '/api/extract/youtube' : '/api/extract/url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          alert(data.error || 'Could not read that link. Paste the text instead.');
+          return;
+        }
+        effective = data.text;
+        effectiveType = kind === 'youtube' ? 'transcript' : 'blog';
+        setSourceLabel(kind === 'youtube' ? `📺 ${data.title}` : `🔗 ${data.title}`);
       }
+      setResolvedContent(effective);
+
+      // --- Hook Laboratory (fast pitch call) ---
+      setPhase('hooks');
+      setStatusMessage('🧪 Pitching 5 viral hooks…');
+      try {
+        const res = await fetch('/api/hooks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: effective.slice(0, 8000), voiceDna: getVoiceDna() }),
+        });
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.hooks) && data.hooks.length > 0) {
+          setHookOptions(data.hooks);
+        }
+      } catch { /* hooks optional — fall through to auto */ }
+      setStatusMessage('');
+      setTimeout(() => {
+        document.getElementById('hook-lab-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err) {
       alert('Failed to connect to AI engine. Check your connection.');
     } finally {
@@ -90,15 +157,176 @@ export default function Home() {
     }
   };
 
-  const handleCopy = (text: string, index: number) => {
+  // Step 2: stream all formats live via SSE (with JSON fallback).
+  const handleStreamGenerate = async () => {
+    const effective = resolvedContent || input;
+    if (!effective.trim()) return;
+    setLoading(true);
+    setPhase('streaming');
+    setResults({});
+    setStreamingFormats(formats);
+    setCurrentStep(0);
+    const interval = setInterval(() => {
+      setCurrentStep((prev) => (prev + 1) % generatingSteps.length);
+    }, 700);
+
+    const buffers: Record<string, string> = Object.fromEntries(formats.map((f) => [f, '']));
+    const done = new Set<string>();
+    const push = () => {
+      const out: GeneratedContent = {};
+      if (buffers.twitter?.trim()) out.twitterThread = splitThreadText(buffers.twitter);
+      if (buffers.linkedin?.trim()) out.linkedinPost = buffers.linkedin.trim();
+      if (buffers.newsletter?.trim()) out.newsletter = buffers.newsletter.trim();
+      if (buffers.instagram?.trim()) out.instagramCaption = buffers.instagram.trim();
+      if (buffers.reddit?.trim()) out.redditPost = parseRedditText(buffers.reddit);
+      if (buffers.threads?.trim()) out.threadsPost = splitThreadText(buffers.threads);
+      setResults({ ...out });
+    };
+
+    try {
+      const res = await fetch('/api/generate/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+        body: JSON.stringify({
+          content: effective,
+          inputType,
+          formats,
+          voiceDna: getVoiceDna(),
+          selectedHook: selectedHook !== null ? hookOptions[selectedHook]?.text : null,
+        }),
+      });
+      if (!res.ok || !res.body) throw new Error(`stream ${res.status}`);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      let gotChunk = false;
+      for (;;) {
+        const { done: rDone, value } = await reader.read();
+        if (rDone) break;
+        buf += decoder.decode(value, { stream: true });
+        const parts = buf.split('\n\n');
+        buf = parts.pop() ?? '';
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith('data:')) continue;
+          try {
+            const evt = JSON.parse(line.slice(5).trim()) as
+              | { type: 'chunk'; format: string; text: string }
+              | { type: 'done-format'; format: string }
+              | { type: 'error-format'; format: string }
+              | { type: 'done' }
+              | { type: 'error'; error: string };
+            if (evt.type === 'chunk') {
+              gotChunk = true;
+              buffers[evt.format] = (buffers[evt.format] ?? '') + evt.text;
+              push();
+            } else if (evt.type === 'done-format' || evt.type === 'error-format') {
+              done.add(evt.format);
+              setStreamingFormats((s) => s.filter((f) => f !== evt.format));
+              push();
+            }
+          } catch { /* partial SSE frame — ignore */ }
+        }
+      }
+      if (!gotChunk) throw new Error('empty stream');
+      setPhase('done');
+      setTimeout(() => {
+        document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    } catch (err) {
+      // Fallback: non-streaming JSON endpoint
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: effective,
+            inputType,
+            formats,
+            voiceDna: getVoiceDna(),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          alert(data.error || `Generation failed (${res.status})`);
+          setPhase('idle');
+        } else {
+          setResults(data);
+          setPhase('done');
+          setTimeout(() => {
+            document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 100);
+        }
+      } catch {
+        alert('Failed to connect to AI engine. Check your connection.');
+        setPhase('idle');
+      }
+    } finally {
+      clearInterval(interval);
+      setLoading(false);
+      setStreamingFormats([]);
+    }
+  };
+
+  // Step 3: delta refine (Humanize buttons).
+  const handleRefine = async (formatId: string, modifier: RefineModifier) => {
+    if (!results || refiningFormat) return;
+    const current = formatTextForRefine(results, formatId);
+    if (!current) return;
+    setRefiningFormat(formatId);
+    try {
+      const res = await fetch('/api/refine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: current, modifier, format: formatId, voiceDna: getVoiceDna() }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        alert(data.error || 'Refine failed');
+        return;
+      }
+      setResults((prev) => (prev ? applyRefinedText(prev, formatId, String(data.text)) : prev));
+    } catch {
+      alert('Refine failed. Check your connection.');
+    } finally {
+      setRefiningFormat(null);
+    }
+  };
+
+  const handleCopy = (text: string, index?: number) => {
     navigator.clipboard.writeText(text);
-    setCopied(index);
+    setCopied(index ?? null);
     setTimeout(() => setCopied(null), 2000);
   };
 
   const handleSampleClick = (sample: string) => {
     setInput(sample);
     document.getElementById('hero-textarea')?.focus();
+  };
+
+  const formatTextForRefine = (r: GeneratedContent, formatId: string): string => {
+    switch (formatId) {
+      case 'twitter': return r.twitterThread?.join('\n\n---\n\n') || '';
+      case 'linkedin': return r.linkedinPost || '';
+      case 'newsletter': return r.newsletter || '';
+      case 'instagram': return r.instagramCaption || '';
+      case 'reddit': return r.redditPost ? `Title: ${r.redditPost.title}\n\n${r.redditPost.body}` : '';
+      case 'threads': return r.threadsPost?.join('\n\n---\n\n') || '';
+      default: return '';
+    }
+  };
+
+  const applyRefinedText = (r: GeneratedContent, formatId: string, newText: string): GeneratedContent => {
+    const out = { ...r };
+    switch (formatId) {
+      case 'twitter': out.twitterThread = newText.split(/---TWEET---/).map(s => s.trim()).filter(Boolean); break;
+      case 'linkedin': out.linkedinPost = newText; break;
+      case 'newsletter': out.newsletter = newText; break;
+      case 'instagram': out.instagramCaption = newText; break;
+      case 'reddit': out.redditPost = parseRedditText(newText); break;
+      case 'threads': out.threadsPost = newText.split(/---TWEET---/).map(s => s.trim()).filter(Boolean); break;
+    }
+    return out;
   };
 
   return (
@@ -133,6 +361,7 @@ export default function Home() {
         <div className="hidden md:flex gap-6 items-center">
           <a href="#features" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Features</a>
           <a href="#how-it-works" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">How it works</a>
+          <a href="/voice-dna/train" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Train Voice DNA</a>
           <button onClick={() => setShowPricing(true)} className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Pricing</button>
           <button onClick={() => setShowFeedback(true)} className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Feedback</button>
           {!isSignedIn ? (
@@ -184,6 +413,7 @@ export default function Home() {
           >
             <a href="#features" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2">Features</a>
             <a href="#how-it-works" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2">How it works</a>
+            <a href="/voice-dna/train" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2">Train Voice DNA</a>
             <button onClick={() => { setShowPricing(true); setShowMobileMenu(false); }} className="block text-slate-300 hover:text-white py-2 w-full text-left">Pricing</button>
             <button onClick={() => { setShowFeedback(true); setShowMobileMenu(false); }} className="block text-slate-300 hover:text-white py-2 w-full text-left">Feedback</button>
             <button onClick={() => { setShowPricing(true); setShowMobileMenu(false); }} className="w-full btn-premium btn-gold py-3 mt-2">
@@ -205,6 +435,8 @@ export default function Home() {
         onGenerate={handleRepurpose}
         isProActive={isProActive}
         onSampleClick={handleSampleClick}
+        formats={formats}
+        setFormats={setFormats}
       />
 
       {/* Stats Bar - Mobile optimized */}
@@ -240,6 +472,19 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Hook Laboratory */}
+      {hookOptions.length > 0 && (
+        <section id="hook-lab-section" className="container mx-auto px-6 py-8">
+          <HookLab
+            hooks={hookOptions}
+            selected={selectedHook}
+            onSelect={setSelectedHook}
+            onConfirm={handleStreamGenerate}
+            streaming={loading}
+          />
+        </section>
+      )}
 
       {/* Live Demo Preview */}
       <LiveDemo />
@@ -352,6 +597,11 @@ export default function Home() {
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
             One-click copy. Multiple formats. Maximum reach.
+            {voiceApplied && (
+              <span className="ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-300 align-middle">
+                <Brain className="w-3 h-3" /> Voice DNA on
+              </span>
+            )}
           </p>
         </motion.div>
 
@@ -398,11 +648,18 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             <div className="lg:col-span-2">
               <ResultsDisplay
-                twitterThread={results.twitterThread}
-                linkedinPost={results.linkedinPost}
+                twitterThread={results?.twitterThread}
+                linkedinPost={results?.linkedinPost}
+                newsletter={results?.newsletter}
+                instagramCaption={results?.instagramCaption}
+                redditPost={results?.redditPost}
+                threadsPost={results?.threadsPost}
                 previewOnly={false}
                 onCopy={handleCopy}
                 copied={copied}
+                streamingFormats={streamingFormats}
+                onRefine={handleRefine}
+                refiningFormat={refiningFormat}
               />
             </div>
             <motion.div
@@ -416,9 +673,24 @@ export default function Home() {
                 <span className="text-xs text-slate-400">Ready to post</span>
               </div>
               <div className="space-y-3">
-                <FormatStat icon="𝕏" label="Twitter Thread" value={`${results.twitterThread.length} tweets`} color="blue" />
-                <FormatStat icon="in" label="LinkedIn Post" value={`${results.linkedinPost.split(/\s+/).length} words`} color="sky" />
-                <FormatStat icon="✉️" label="Newsletter" value="Draft ready" color="purple" />
+                {results.twitterThread && (
+                  <FormatStat icon="𝕏" label="Twitter Thread" value={`${results.twitterThread.length} tweets`} color="blue" />
+                )}
+                {results.linkedinPost && (
+                  <FormatStat icon="in" label="LinkedIn Post" value={`${results.linkedinPost.split(/\s+/).length} words`} color="sky" />
+                )}
+                {results.newsletter && (
+                  <FormatStat icon="✉️" label="Newsletter" value="Draft ready" color="purple" />
+                )}
+                {results.instagramCaption && (
+                  <FormatStat icon="📷" label="Instagram" value="Caption ready" color="pink" />
+                )}
+                {results.redditPost && (
+                  <FormatStat icon="🔴" label="Reddit" value="Post ready" color="orange" />
+                )}
+                {results.threadsPost && (
+                  <FormatStat icon="↗️" label="Threads" value={`${results.threadsPost.length} threads`} color="indigo" />
+                )}
               </div>
 
               <div className="mt-6 pt-6 border-t border-white/5">
@@ -440,7 +712,7 @@ export default function Home() {
               <motion.button
                 onClick={() => {
                   const blob = new Blob([
-                    `=== TWITTER THREAD ===\n\n${results.twitterThread.join('\n\n---\n\n')}\n\n=== LINKEDIN POST ===\n\n${results.linkedinPost}`
+                    `=== TWITTER THREAD ===\n\n${results.twitterThread?.join('\n\n---\n\n') || ''}\n\n=== LINKEDIN POST ===\n\n${results.linkedinPost || ''}\n\n=== NEWSLETTER ===\n\n${results.newsletter || ''}\n\n=== INSTAGRAM ===\n\n${results.instagramCaption || ''}\n\n=== REDDIT ===\n\n${results.redditPost ? `Title: ${results.redditPost.title}\n\n${results.redditPost.body}` : ''}\n\n=== THREADS ===\n\n${results.threadsPost?.join('\n\n---\n\n') || ''}`
                   ], { type: 'text/plain' });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
