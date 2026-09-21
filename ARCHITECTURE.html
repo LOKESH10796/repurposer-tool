@@ -1,0 +1,192 @@
+---
+title: Repurposer Tool — Architecture Diagram
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Repurposer Tool — Architecture</title>
+  <style>
+    :root {
+      --foreground: #0f172a;
+      --muted-foreground: #64748b;
+      --accent: #3b82f6;
+      --border: #e2e8f0;
+      --card: #ffffff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--card);
+      color: var(--foreground);
+      padding: 2rem;
+      line-height: 1.5;
+    }
+    h1 { font-size: 1.75rem; margin-bottom: 1rem; }
+    .subtitle { color: var(--muted-foreground); margin-bottom: 2rem; font-size: 1rem; }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1.5rem;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-header h2 { font-size: 1.1rem; }
+    .icon { font-size: 1.5rem; }
+    .layer { grid-column: span 12; }
+    .layer-1 { grid-column: span 12; }
+    .layer-2 { grid-column: span 6; }
+    .layer-3 { grid-column: span 4; }
+    .layer-4 { grid-column: span 2; }
+    .badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-primary { background: rgba(59, 130, 246, 0.1); color: var(--accent); }
+    .tech-list { list-style: none; margin-top: 0.5rem; }
+    .tech-list li { padding: 0.25rem 0; display: flex; align-items: center; gap: 0.5rem; }
+    .tech-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+    .arrow {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      color: var(--muted-foreground);
+      font-size: 1.1rem;
+    }
+    @media (min-width: 768px) {
+      .arrow-md { display: flex; }
+    }
+    .data-flow {
+      grid-column: span 12;
+      background: rgba(59, 130, 246, 0.03);
+      border-style: dashed;
+    }
+    .source-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    .source-link:hover { text-decoration: underline; }
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      h1 { font-size: 1.4rem; }
+      .layer-2 { grid-column: span 12; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Repurposer Tool — Architecture</h1>
+  <p class="subtitle">Next.js 16 App Router • React 19 • TypeScript Strict • Tailwind CSS 4</p>
+
+  <div class="container">
+
+    <!-- Data Sources Layer -->
+    <div class="card layer layer-1">
+      <div class="card-header">
+        <span class="icon">📥</span>
+        <h2>Data Sources</h2>
+      </div>
+      <ul class="tech-list">
+        <li><span class="tech-dot"></span> User-pasted text</li>
+        <li><span class="tech-dot"></span> CSV upload (Papaparse)</li>
+        <li><span class="tech-dot"></span> YouTube transcript API</li>
+        <li><span class="tech-dot"></span> URL fetch (future)</li>
+      </ul>
+    </div>
+
+    <!-- API Routes Layer -->
+    <div class="card layer layer-2" style="grid-column: 6 / span 6;">
+      <div class="card-header">
+        <span class="badge badge-primary">API</span>
+        <h2>Next.js Route Handlers</h2>
+      </div>
+      <ul class="tech-list">
+        <li><span class="tech-dot"></span> <span><code>/api/repurpose</code> — Core orchestration</span></li>
+        <li><span class="tech-dot"></span> <span><code>/api/analyze</code> — AI sentiment & tone</span></li>
+        <li><span class="tech-dot"></span> <span><code>/api/generate</code> — Format generation</span></li>
+        <li><span class="tech-dot"></span> <span><code>/api/export</code> — CSV/TXT export</span></li>
+      </ul>
+    </div>
+
+    <!-- AI Services Layer -->
+    <div class="card layer layer-2" style="grid-column: 12 / span 6;">
+      <div class="card-header">
+        <span class="icon">🧠</span>
+        <h2>AI Services</h2>
+      </div>
+      <ul class="tech-list">
+        <li><span class="tech-dot"></span> Google Generative AI (Gemini)</li>
+        <li><span class="tech-dot"></span> HuggingFace Transformers</li>
+        <li><span class="tech-dot"></span> Zod input validation</li>
+        <li><span class="tech-dot"></span> @types/canvas-confetti feedback</li>
+      </ul>
+    </div>
+
+    <!-- Frontend Layer -->
+    <div class="card layer layer-1" style="grid-column: 6 / span 6;">
+      <div class="card-header">
+        <span class="icon">🖥️</span>
+        <h2>Frontend (App Router)</h2>
+      </div>
+      <ul class="tech-list">
+        <li><span class="tech-dot"></span> <code>app/page.tsx</code> — Landing</li>
+        <li><span class="tech-dot"></span> <code>app/api/repurpose/route.ts</code> — Orchestration</li>
+        <li><span class="tech-dot"></span> <code>hooks/</code> — Custom React hooks</li>
+        <li><span class="tech-dot"></span> <code>lib/</code> — Shared utilities (CSV, AI client)</li>
+      </ul>
+    </div>
+
+    <!-- Auth Layer -->
+    <div class="card layer layer-2" style="grid-column: 12 / span 6;">
+      <div class="card-header">
+        <span class="icon">🔐</span>
+        <h2>Authentication</h2>
+      </div>
+      <p style="margin-bottom: 0.5rem;">Clerk Next.js SDK v7</p>
+      <ul class="tech-list">
+        <li><span class="tech-dot"></span> Sign-in / Sign-up</li>
+        <li><span class="tech-dot"></span> Session management</li>
+        <li><span class="tech-dot"></span> Protected routes</li>
+      </ul>
+    </div>
+
+    <!-- Data Flow -->
+    <div class="card layer data-flow">
+      <div class="card-header">
+        <span class="icon">🔄</span>
+        <h2>Data Flow</h2>
+      </div>
+      <p>User input → Validation (Zod) → AI Analysis → Content Generation → Format Output (CSV, social, blog, etc.) → Export / Display</p>
+    </div>
+
+    <footer style="grid-column: span 12; text-align: center; padding-top: 2rem; color: var(--muted-foreground);">
+      <p>Architecture diagram for <a href="https://github.com/LOKESH10796/repurposer-tool" class="source-link">repurposer-tool</a></p>
+    </footer>
+
+  </div>
+</body>
+</html>
