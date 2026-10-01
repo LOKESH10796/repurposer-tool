@@ -15,8 +15,10 @@ import Link from 'next/link';
 interface PreviewPageProps {
   searchParams: Promise<{ source?: string }>;
 }
+import { use } from 'react';
 
 export default function PreviewPage({ searchParams }: PreviewPageProps) {
+  const params = use(searchParams);
   const [voiceDna, setVoiceDna] = useState<VoiceDNA | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,8 +26,6 @@ export default function PreviewPage({ searchParams }: PreviewPageProps) {
   useEffect(() => {
     const loadVoiceDNA = async () => {
       try {
-        // First check URL params for a session key
-        const params = await searchParams;
         const sessionKey = params.source || 'voice-dna-latest';
         
         // Try sessionStorage first
@@ -72,7 +72,7 @@ export default function PreviewPage({ searchParams }: PreviewPageProps) {
     };
 
     loadVoiceDNA();
-  }, [searchParams]);
+  }, [params.source]);
 
   const handleDownload = () => {
     if (!voiceDna) return;
@@ -167,10 +167,10 @@ export default function PreviewPage({ searchParams }: PreviewPageProps) {
         <div className="container mx-auto px-4 text-center">
           <p className="text-muted-foreground mb-4">Ready to turn this into content?</p>
           <Link 
-            href="/voice-dna/suggestions" 
+            href="/" 
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
           >
-            Get Smart Suggestions →
+            Start Repurposing Now →
           </Link>
         </div>
       </footer>

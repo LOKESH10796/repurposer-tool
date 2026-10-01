@@ -36,7 +36,7 @@ const CREATORS = [
     hooks: ['story', 'framework', 'prediction'] as const },
 ];
 
-export default function ColdStartPage({ searchParams }: ColdStartPageProps) {
+export default function ColdStartPage() {
   const [step, setStep] = useState<'creators' | 'blend' | 'complete'>('creators');
   const [selectedCreators, setSelectedCreators] = useState<string[]>([]);
   const [customIdeas, setCustomIdeas] = useState<string>('');
