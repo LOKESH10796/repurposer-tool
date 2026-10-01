@@ -104,7 +104,7 @@ export default function Welcome() {
         </div>
 
         <h1 className="text-3xl font-bold tracking-tight">
-          Welcome to Repurposer Pro! 🎉
+          Welcome to Reframe.ai Pro! 🎉
         </h1>
 
         <p className="text-lg">
@@ -171,7 +171,7 @@ export default function Welcome() {
 
       <p className="mt-6 text-xs text-white/60">
         Need help? Reply to your Gumroad receipt email or visit{' '}
-        <a href="https://repurposer-tool.vercel.app#faq" className="text-white hover:text-indigo-300 underline">
+        <a href="https://Reframe.ai-tool.vercel.app#faq" className="text-white hover:text-indigo-300 underline">
           our FAQ
         </a>
       </p>

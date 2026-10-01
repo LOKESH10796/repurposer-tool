@@ -13,7 +13,7 @@ interface FAQItem {
 export function FAQ() {
   const faqItems: FAQItem[] = [
     {
-      question: "How does Repurposer actually work?",
+      question: "How does Reframe.ai actually work?",
       answer: "Our AI analyzes your input content, extracts key insights, themes, and tone, then generates platform-native variations optimized for each channel's algorithm and audience expectations. It's not just rewriting — it's strategic repurposing.",
       icon: Sparkles,
       bgColor: "from-indigo-500/10 via-purple-500/10 to-pink-500/10"
@@ -44,13 +44,13 @@ export function FAQ() {
     },
     {
       question: "Do I need to be a tech expert to use this?",
-      answer: "Not at all. If you can paste text and click a button, you can use Repurposer. Zero learning curve, zero setup, zero configuration. Just paste your content and let the AI do the heavy lifting.",
+      answer: "Not at all. If you can paste text and click a button, you can use Reframe.ai. Zero learning curve, zero setup, zero configuration. Just paste your content and let the AI do the heavy lifting.",
       icon: Users,
       bgColor: "from-sky-500/10 via-cyan-500/10 to-blue-500/10"
     },
     {
       question: "What makes this different from other AI tools?",
-      answer: "Most AI tools give you generic outputs. Repurposer is engineered specifically for content repurposing with platform-native formatting, viral hook optimization, and zero-fluff generation. It's a specialized tool, not a general-purpose chatbot.",
+      answer: "Most AI tools give you generic outputs. Reframe.ai is engineered specifically for content repurposing with platform-native formatting, viral hook optimization, and zero-fluff generation. It's a specialized tool, not a general-purpose chatbot.",
       icon: Award,
       bgColor: "from-amber-500/10 via-orange-500/10 to-red-500/10"
     },

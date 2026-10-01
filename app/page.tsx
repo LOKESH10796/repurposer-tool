@@ -91,10 +91,11 @@ export default function Home() {
   // Step 1: resolve omni-input (URL / YouTube / text) then fetch hook pitches.
   const handleRepurpose = async () => {
     if (!input.trim()) return;
-    if (!isProActive) {
-      setShowPricing(true);
-      return;
-    }
+    // Allow free tier to test the engine (formats can be restricted elsewhere if needed)
+    // if (!isProActive) {
+    //   setShowPricing(true);
+    //   return;
+    // }
     setLoading(true);
     setResults(null);
     setHookOptions([]);
@@ -354,14 +355,14 @@ export default function Home() {
           >
             <Sparkles className="w-5 h-5 text-white" />
           </motion.div>
-          <span className="text-white font-bold text-xl tracking-tight">Repurposer<span className="text-indigo-400">.</span>ai</span>
+          <span className="text-white font-bold text-xl tracking-tight">Reframe<span className="text-indigo-400">.</span>ai</span>
         </div>
 
         {/* Desktop Nav */}
         <div className="hidden md:flex gap-6 items-center">
           <a href="#features" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Features</a>
           <a href="#how-it-works" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">How it works</a>
-          <a href="/voice-dna/train" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Train Voice DNA</a>
+          <a href="/voice-dna/cold-start" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Train Voice DNA</a>
           <button onClick={() => setShowPricing(true)} className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Pricing</button>
           <button onClick={() => setShowFeedback(true)} className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Feedback</button>
           {!isSignedIn ? (
@@ -413,7 +414,7 @@ export default function Home() {
           >
             <a href="#features" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2">Features</a>
             <a href="#how-it-works" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2">How it works</a>
-            <a href="/voice-dna/train" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2">Train Voice DNA</a>
+            <a href="/voice-dna/cold-start" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2">Train Voice DNA</a>
             <button onClick={() => { setShowPricing(true); setShowMobileMenu(false); }} className="block text-slate-300 hover:text-white py-2 w-full text-left">Pricing</button>
             <button onClick={() => { setShowFeedback(true); setShowMobileMenu(false); }} className="block text-slate-300 hover:text-white py-2 w-full text-left">Feedback</button>
             <button onClick={() => { setShowPricing(true); setShowMobileMenu(false); }} className="w-full btn-premium btn-gold py-3 mt-2">

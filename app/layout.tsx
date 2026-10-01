@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Repurposer: Turn 1 Piece of Content into a Week of Viral Posts | AI-Powered",
+  title: "Reframe.ai: Turn 1 Piece of Content into a Week of Viral Posts | AI-Powered",
   description: "Paste any content—blog, transcript, notes—and get ready-to-post Twitter threads, LinkedIn posts, and newsletter drafts in seconds. Unlimited lifetime access for $15.",
 };
 

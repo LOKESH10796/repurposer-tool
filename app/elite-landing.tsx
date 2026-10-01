@@ -78,7 +78,7 @@ function Navbar({ onGetStarted }: { onGetStarted: () => void }) {
         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
           <Sparkles className="w-5 h-5 text-white" />
         </div>
-        <span className="text-white font-bold text-xl">Repurposer</span>
+        <span className="text-white font-bold text-xl">Reframe.ai</span>
       </div>
 
       <div className="flex items-center gap-6">
@@ -335,7 +335,7 @@ function FeaturesSection() {
     {
       icon: <Award className="w-6 h-6 text-yellow-400" />,
       title: "Proven Results",
-      desc: "Join thousands of content creators who've grown their audience with Repurposer",
+      desc: "Join thousands of content creators who've grown their audience with Reframe.ai",
     },
   ];
 
@@ -346,7 +346,7 @@ function FeaturesSection() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, delay: 1.8 }}
     >
-      <h2 className="text-3xl font-bold text-white mb-12 text-center">Why Choose Repurposer</h2>
+      <h2 className="text-3xl font-bold text-white mb-12 text-center">Why Choose Reframe.ai</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {features.map((feature, i) => (
           <motion.div
@@ -372,7 +372,7 @@ function FeaturesSection() {
 function TestimonialsSection() {
   const testimonials = [
     {
-      quote: "Repurposer cut my content workflow from 3 hours to 15 minutes. The Twitter threads actually sound like me.",
+      quote: "Reframe.ai cut my content workflow from 3 hours to 15 minutes. The Twitter threads actually sound like me.",
       author: "Sarah Chen",
       role: "Tech Writer @ Vercel",
     },
@@ -436,7 +436,7 @@ function CTASection({ onGetStarted }: { onGetStarted: () => void }) {
           Ready to 10x Your Content Output?
         </h2>
         <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
-          Join 10,000+ creators who've reclaimed their time and grown their audience with Repurposer.
+          Join 10,000+ creators who've reclaimed their time and grown their audience with Reframe.ai.
         </p>
         <button
           onClick={onGetStarted}
@@ -459,7 +459,7 @@ function Footer() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6, delay: 2.4 }}
     >
-      <p>© 2026 Repurposer. Built with ❤️ for content creators.</p>
+      <p>© 2026 Reframe.ai. Built with ❤️ for content creators.</p>
     </motion.footer>
   );
 }

@@ -21,7 +21,7 @@ export function Footer() {
             <Sparkles className="w-5 h-5 text-white" />
           </motion.div>
           <span className="text-white font-bold text-xl tracking-tight">
-            Repurposer<span className="text-indigo-400">.</span>ai
+            Reframe<span className="text-indigo-400">.</span>ai
           </span>
         </div>
         <p className="text-sm max-w-2xl">
@@ -66,7 +66,7 @@ export function Footer() {
 
       <div className="border-t border-slate-700/50 pt-6">
         <p className="text-sm text-slate-500">
-          © 2026 Repurposer. All rights reserved. Made with ❤️ for creators.
+          © 2026 Reframe. All rights reserved. Made with ❤️ for creators.
         </p>
         <div className="mt-4 flex flex-wrap justify-center gap-4 text-xs text-slate-400">
           <span>Terms</span>
