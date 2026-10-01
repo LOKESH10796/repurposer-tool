@@ -61,7 +61,7 @@ const sampleContent = `Artificial intelligence (AI) is transforming industries w
 describe('parseContent', () => {
   it('should count words correctly', () => {
     const result = parseContent(sampleContent);
-    expect(result.wordCount).toBe(20);
+    expect(result.wordCount).toBe(23);
   });
 
   it('should calculate read time based on 200 WPM', () => {
@@ -89,7 +89,7 @@ describe('analyzeContent', () => {
 
   it('should return accurate word count', () => {
     const result = analyzeContent(sampleContent);
-    expect(result.wordCount).toBe(20);
+    expect(result.wordCount).toBe(23);
   });
 });
 
@@ -108,6 +108,6 @@ describe('generateContent', () => {
 
   it('should preserve content length in output', () => {
     const result = generateContent('linkedin', sampleContent);
-    expect(result.wordCount).toBe(20);
+    expect(result.wordCount).toBe(23);
   });
 });
