@@ -744,6 +744,7 @@ export default function Home() {
               </motion.button>
             </motion.div>
           </div>
+          )
         ) : (
           <motion.div
             initial={{ opacity: 0 }}
