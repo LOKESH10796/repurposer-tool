@@ -7,6 +7,7 @@
 [![Clerk](https://img.shields.io/badge/Clerk-Auth-6C47FF?style=for-the-badge&logo=clerk&logoColor=white)](https://clerk.com/)
 [![Gumroad](https://img.shields.io/badge/Gumroad-Monetization-FF90E8?style=for-the-badge&logo=gumroad&logoColor=black)](https://gumroad.com/)
 [![Gemini API](https://img.shields.io/badge/Google-Gemini_AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://aistudio.google.com/)
+[![Live Demo](https://img.shields.io/badge/🚀_LIVE_DEMO-repurposer--tool.vercel.app-22D3EE?style=for-the-badge)](https://repurposer-tool.vercel.app)
 
 Reframe.ai is an enterprise-grade AI SaaS application that transforms articles and YouTube transcripts into hyper-optimized, platform-specific content (Twitter threads, LinkedIn posts, Newsletters). 
 
