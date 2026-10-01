@@ -4,7 +4,7 @@ import { clerkClient } from '@clerk/nextjs/server';
 // Your Gumroad seller_id — used to verify pings are genuinely from your account
 // Gumroad Ping POSTs form-encoded data; there is no HMAC signature header.
 // We verify authenticity by checking the seller_id field matches yours.
-const GUMROAD_SELLER_ID = process.env.GUMROAD_SELLER_ID || 'u9zbSgKq9QAvoSynCnJb_g==';
+const GUMROAD_SELLER_ID = (process.env.GUMROAD_SELLER_ID || 'u9zbSgKq9QAvoSynCnJb_g==').trim();
 
 /**
  * Gumroad Ping Webhook Handler
