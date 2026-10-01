@@ -13,6 +13,7 @@ export interface GeneratedContent {
   instagramCaption?: string;
   redditPost?: { title: string; body: string };
   threadsPost?: string[];
+  error?: string;
 }
 
 interface FormatResult {

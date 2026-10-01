@@ -14,7 +14,7 @@ export function StatsBar() {
           <TrendingUp className="w-6 h-6 text-emerald-400" />
         </div>
         <div className="text-3xl font-bold text-white">1,247</div>
-        <p className="text-sm text-slate-400">Content pieces repurposed today</p>
+        <p className="text-sm text-slate-400">Content pieces reframed today</p>
       </div>
       <div className="flex-1 text-center border-r border-white/5 py-4 last:border-0">
         <div className="flex items-center justify-center gap-2 mb-2">

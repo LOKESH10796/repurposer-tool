@@ -6,7 +6,7 @@ import {
   Sparkles, Copy, Check, Lock, MessageSquare, Crown, Rocket,
   Zap, Brain, ArrowRight, Sparkle, Star, Flame, Shield,
   TrendingUp, CheckCircle2, Infinity as InfinityIcon, Clock,
-  Users, Award, Heart, X, Menu, Trophy
+  Users, Award, Heart, X, Menu, Trophy, AlertCircle
 } from 'lucide-react';
 import { ResultsDisplay, type GeneratedContent, type RefineModifier } from './components/ResultsDisplay';
 import { HookLab, type HookOption } from './components/HookLab';
@@ -15,7 +15,7 @@ import { FeaturesModal, PricingModal, FeedbackModal } from './components/NavbarM
 import { SignInButton, useUser, UserButton } from '@clerk/nextjs';
 import { PricingCard } from './components/PricingCard';
 import { HeroSection } from './components/HeroSection';
-import { ParticleBackground } from './components/ParticleBackground';
+
 import { StatsBar } from './components/StatsBar';
 import { Testimonials } from './components/Testimonials';
 import { FeatureGrid } from './components/FeatureGrid';
@@ -123,7 +123,11 @@ export default function Home() {
         });
         const data = await res.json();
         if (!res.ok || data.error) {
-          alert(data.error || 'Could not read that link. Paste the text instead.');
+          setStatusMessage('');
+          setPhase('idle');
+          setLoading(false);
+          // show error in UI instead of alert
+          setResults({ error: data.error || 'Could not read that link. Paste the text instead.' } as any);
           return;
         }
         effective = data.text;
@@ -249,7 +253,7 @@ export default function Home() {
         });
         const data = await res.json();
         if (!res.ok || data.error) {
-          alert(data.error || `Generation failed (${res.status})`);
+          setResults({ error: data.error || `Generation failed (${res.status})` } as any);
           setPhase('idle');
         } else {
           setResults(data);
@@ -259,7 +263,7 @@ export default function Home() {
           }, 100);
         }
       } catch {
-        alert('Failed to connect to AI engine. Check your connection.');
+        setResults({ error: 'Failed to connect to AI engine. Check your connection.' } as any);
         setPhase('idle');
       }
     } finally {
@@ -332,13 +336,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen relative overflow-hidden">
-      <ParticleBackground />
-      <div className="fixed inset-0 grid-overlay z-0" />
 
-      {/* Floating orbs */}
-      <div className="orb orb-1" />
-      <div className="orb orb-2" />
-      <div className="orb orb-3" />
 
       {/* Navigation */}
       <motion.nav
@@ -646,7 +644,22 @@ export default function Home() {
             </div>
           </motion.div>
         ) : results ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          results.error ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="max-w-2xl mx-auto text-center py-12"
+            >
+              <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-red-500/10 to-orange-500/10 flex items-center justify-center border border-red-500/20">
+                <AlertCircle className="w-10 h-10 text-red-500" />
+              </div>
+              <h3 className="text-xl text-white font-bold mb-2">Oops! Something went wrong.</h3>
+              <p className="text-slate-400 text-lg">
+                {results.error}
+              </p>
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             <div className="lg:col-span-2">
               <ResultsDisplay
                 twitterThread={results?.twitterThread}
@@ -766,7 +779,7 @@ export default function Home() {
               <Rocket className="w-16 h-16 text-amber-400" />
             </motion.div>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Stop Writing. <span className="gradient-text-gold">Start Repurposing.</span>
+              Stop Writing. <span className="gradient-text-gold">Start Reframing.</span>
             </h2>
             <p className="text-lg text-slate-300 mb-8 max-w-2xl mx-auto">
               Join 2,000+ creators who turned one idea into a week's worth of content in 30 seconds.
