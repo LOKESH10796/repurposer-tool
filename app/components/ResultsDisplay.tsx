@@ -20,6 +20,7 @@ interface FormatResult {
   id: string;
   label: string;
   content: string;
+  rawThread?: string[];
   type: 'text' | 'thread' | 'object';
 }
 
@@ -61,12 +62,12 @@ export function ResultsDisplay({
   const [activeTab, setActiveTab] = useState<string>('twitter');
 
   const formatResults: FormatResult[] = [
-    { id: 'twitter', label: 'Twitter Thread', content: twitterThread?.join('\n') || '', type: 'thread' },
+    { id: 'twitter', label: 'Twitter Thread', content: twitterThread?.join('\n') || '', rawThread: twitterThread, type: 'thread' },
     { id: 'linkedin', label: 'LinkedIn Post', content: linkedinPost || '', type: 'text' },
     { id: 'newsletter', label: 'Newsletter', content: newsletter || '', type: 'text' },
     { id: 'instagram', label: 'Instagram', content: instagramCaption || '', type: 'text' },
     { id: 'reddit', label: 'Reddit', content: redditPost?.body || '', type: 'object' },
-    { id: 'threads', label: 'Threads', content: threadsPost?.join('\n') || '', type: 'thread' },
+    { id: 'threads', label: 'Threads', content: threadsPost?.join('\n') || '', rawThread: threadsPost, type: 'thread' },
   ];
 
   const activeResult = formatResults.find(r => r.id === activeTab);
@@ -139,7 +140,7 @@ export function ResultsDisplay({
                     onRefine={onRefine}
                   />
                 )}
-                {((activeResult.content as unknown as string[])).map((tweet, index) => (
+                {(activeResult.rawThread || activeResult.content.split('\n\n')).map((tweet, index) => (
                   <motion.div
                     key={index}
                     className="glass rounded-xl p-4 border border-white/5 hover:border-indigo-500/20 transition-all"
