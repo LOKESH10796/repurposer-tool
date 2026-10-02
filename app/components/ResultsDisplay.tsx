@@ -81,7 +81,7 @@ export function ResultsDisplay({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `repurposed-${activeTab}-${Date.now()}.txt`;
+    a.download = `reframed-${activeTab}-${Date.now()}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -213,7 +213,7 @@ function DownloadButton({ text, onDownload }: { text: string; onDownload: () => 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `repurposed-${Date.now()}.txt`;
+    a.download = `reframed-${Date.now()}.txt`;
     a.click();
     URL.revokeObjectURL(url);
     onDownload();

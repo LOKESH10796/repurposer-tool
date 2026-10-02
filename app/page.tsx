@@ -1,35 +1,31 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Copy, Check, Lock, MessageSquare, Crown, Rocket,
   Zap, Brain, ArrowRight, Sparkle, Star, Flame, Shield,
   TrendingUp, CheckCircle2, Infinity as InfinityIcon, Clock,
-  Users, Award, Heart, X, Menu, Trophy, AlertCircle
+  Users, Award, Heart, X, Menu, Trophy, AlertCircle, Download
 } from 'lucide-react';
 import { ResultsDisplay, type GeneratedContent, type RefineModifier } from './components/ResultsDisplay';
-import { HookLab, type HookOption } from './components/HookLab';
 import { detectInputKind, extractFirstUrl } from '@/lib/input-resolver';
 import { FeaturesModal, PricingModal, FeedbackModal } from './components/NavbarModals';
 import { SignInButton, useUser, UserButton } from '@clerk/nextjs';
 import { PricingCard } from './components/PricingCard';
 import { HeroSection } from './components/HeroSection';
-
-import { StatsBar } from './components/StatsBar';
 import { Testimonials } from './components/Testimonials';
 import { FeatureGrid } from './components/FeatureGrid';
 import { HowItWorks } from './components/HowItWorks';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
-import { LiveDemo } from './components/LiveDemo';
 
 const generatingSteps = [
-  "🧠 Analyzing your content...",
-  "✍️ Crafting viral hooks...",
-  "⚡ Optimizing for each platform...",
-  "🎯 Polishing tone & style...",
-  "✨ Generating your content...",
+  "Analyzing your content...",
+  "Crafting viral hooks...",
+  "Optimizing for each platform...",
+  "Polishing tone & style...",
+  "Generating your content...",
 ];
 
 export default function Home() {
@@ -41,20 +37,16 @@ export default function Home() {
   const [showFeatures, setShowFeatures] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [showAllFormats, setShowAllFormats] = useState(false);
   const [inputType, setInputType] = useState<'blog' | 'transcript' | 'notes'>('blog');
-  const [formats, setFormats] = useState<string[]>(['twitter', 'linkedin', 'newsletter', 'instagram', 'reddit', 'threads']);
+  const [formats] = useState<string[]>(['twitter', 'linkedin', 'newsletter', 'instagram', 'reddit', 'threads']);
   const [wordCount, setWordCount] = useState(0);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [voiceApplied, setVoiceApplied] = useState(false);
-  const [phase, setPhase] = useState<'idle' | 'extracting' | 'hooks' | 'streaming' | 'done'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'extracting' | 'streaming' | 'done'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
-  const [hookOptions, setHookOptions] = useState<HookOption[]>([]);
-  const [selectedHook, setSelectedHook] = useState<number | null>(null);
-  const [resolvedContent, setResolvedContent] = useState('');
-  const [sourceLabel, setSourceLabel] = useState('');
   const [streamingFormats, setStreamingFormats] = useState<string[]>([]);
   const [refiningFormat, setRefiningFormat] = useState<string | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const { isSignedIn, user } = useUser();
 
   useEffect(() => {
@@ -65,7 +57,6 @@ export default function Home() {
   }, []);
 
   const isProActive = user?.publicMetadata?.pro === true;
-  const isPaid = isProActive;
 
   useEffect(() => {
     setWordCount(input.trim().split(/\s+/).filter(Boolean).length);
@@ -85,37 +76,36 @@ export default function Home() {
     const m = t.match(/^\s*Title:\s*(.+?)\s*\n+([\s\S]*)$/);
     if (m) return { title: m[1].trim(), body: m[2].trim() };
     const lines = t.split('\n').filter((l) => l.trim());
-    return { title: (lines[0] ?? 'Repurposed post').slice(0, 200), body: lines.slice(1).join('\n').trim() || t };
+    return { title: (lines[0] ?? 'Reframed post').slice(0, 200), body: lines.slice(1).join('\n').trim() || t };
   };
 
-  // Step 1: resolve omni-input (URL / YouTube / text) then fetch hook pitches.
-  const handleRepurpose = async () => {
+  // Main generate function — resolves input then streams all formats via SSE
+  const handleGenerate = async () => {
     if (!input.trim()) return;
-    // Allow free tier to test the engine (formats can be restricted elsewhere if needed)
-    // if (!isProActive) {
-    //   setShowPricing(true);
-    //   return;
-    // }
     setLoading(true);
     setResults(null);
-    setHookOptions([]);
-    setSelectedHook(null);
-    setSourceLabel('');
     setCurrentStep(0);
+    setPhase('streaming');
 
     const interval = setInterval(() => {
       setCurrentStep((prev) => (prev + 1) % generatingSteps.length);
     }, 700);
+
+    // Scroll to results section immediately
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
 
     try {
       // --- Omni-input resolution ---
       const kind = detectInputKind(input);
       let effective = input;
       let effectiveType = inputType;
+
       if (kind === 'youtube' || kind === 'url') {
         setPhase('extracting');
         const url = extractFirstUrl(input) ?? input.trim();
-        setStatusMessage(kind === 'youtube' ? '📺 Pulling YouTube transcript…' : '🔗 Reading URL via Jina Reader…');
+        setStatusMessage(kind === 'youtube' ? 'Pulling YouTube transcript...' : 'Reading URL content...');
         const res = await fetch(kind === 'youtube' ? '/api/extract/youtube' : '/api/extract/url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -126,85 +116,51 @@ export default function Home() {
           setStatusMessage('');
           setPhase('idle');
           setLoading(false);
-          // show error in UI instead of alert
-          setResults({ error: data.error || 'Could not read that link. Paste the text instead.' } as any);
+          clearInterval(interval);
+          setResults({ error: data.error || 'Could not read that link. Paste the text instead.' });
           return;
         }
         effective = data.text;
         effectiveType = kind === 'youtube' ? 'transcript' : 'blog';
-        setSourceLabel(kind === 'youtube' ? `📺 ${data.title}` : `🔗 ${data.title}`);
       }
-      setResolvedContent(effective);
 
-      // --- Hook Laboratory (fast pitch call) ---
-      setPhase('hooks');
-      setStatusMessage('🧪 Pitching 5 viral hooks…');
-      try {
-        const res = await fetch('/api/hooks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: effective.slice(0, 8000), voiceDna: getVoiceDna() }),
-        });
-        const data = await res.json();
-        if (res.ok && Array.isArray(data.hooks) && data.hooks.length > 0) {
-          setHookOptions(data.hooks);
-        }
-      } catch { /* hooks optional — fall through to auto */ }
       setStatusMessage('');
-      setTimeout(() => {
-        document.getElementById('hook-lab-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    } catch (err) {
-      alert('Failed to connect to AI engine. Check your connection.');
-    } finally {
-      clearInterval(interval);
-      setLoading(false);
-    }
-  };
+      setPhase('streaming');
 
-  // Step 2: stream all formats live via SSE (with JSON fallback).
-  const handleStreamGenerate = async () => {
-    const effective = resolvedContent || input;
-    if (!effective.trim()) return;
-    setLoading(true);
-    setPhase('streaming');
-    setResults({});
-    setStreamingFormats(formats);
-    setCurrentStep(0);
-    const interval = setInterval(() => {
-      setCurrentStep((prev) => (prev + 1) % generatingSteps.length);
-    }, 700);
+      // --- Stream all formats via SSE ---
+      const buffers: Record<string, string> = Object.fromEntries(formats.map((f) => [f, '']));
+      setStreamingFormats([...formats]);
+      setResults({});
 
-    const buffers: Record<string, string> = Object.fromEntries(formats.map((f) => [f, '']));
-    const done = new Set<string>();
-    const push = () => {
-      const out: GeneratedContent = {};
-      if (buffers.twitter?.trim()) out.twitterThread = splitThreadText(buffers.twitter);
-      if (buffers.linkedin?.trim()) out.linkedinPost = buffers.linkedin.trim();
-      if (buffers.newsletter?.trim()) out.newsletter = buffers.newsletter.trim();
-      if (buffers.instagram?.trim()) out.instagramCaption = buffers.instagram.trim();
-      if (buffers.reddit?.trim()) out.redditPost = parseRedditText(buffers.reddit);
-      if (buffers.threads?.trim()) out.threadsPost = splitThreadText(buffers.threads);
-      setResults({ ...out });
-    };
+      const push = () => {
+        const out: GeneratedContent = {};
+        if (buffers.twitter?.trim()) out.twitterThread = splitThreadText(buffers.twitter);
+        if (buffers.linkedin?.trim()) out.linkedinPost = buffers.linkedin.trim();
+        if (buffers.newsletter?.trim()) out.newsletter = buffers.newsletter.trim();
+        if (buffers.instagram?.trim()) out.instagramCaption = buffers.instagram.trim();
+        if (buffers.reddit?.trim()) out.redditPost = parseRedditText(buffers.reddit);
+        if (buffers.threads?.trim()) out.threadsPost = splitThreadText(buffers.threads);
+        setResults({ ...out });
+      };
 
-    try {
       const res = await fetch('/api/generate/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
         body: JSON.stringify({
           content: effective,
-          inputType,
+          inputType: effectiveType,
           formats,
           voiceDna: getVoiceDna(),
-          selectedHook: selectedHook !== null ? hookOptions[selectedHook]?.text : null,
         }),
       });
+
       if (!res.ok || !res.body) throw new Error(`stream ${res.status}`);
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = '';
       let gotChunk = false;
+
       for (;;) {
         const { done: rDone, value } = await reader.read();
         if (rDone) break;
@@ -226,26 +182,23 @@ export default function Home() {
               buffers[evt.format] = (buffers[evt.format] ?? '') + evt.text;
               push();
             } else if (evt.type === 'done-format' || evt.type === 'error-format') {
-              done.add(evt.format);
               setStreamingFormats((s) => s.filter((f) => f !== evt.format));
               push();
             }
           } catch { /* partial SSE frame — ignore */ }
         }
       }
+
       if (!gotChunk) throw new Error('empty stream');
       setPhase('done');
-      setTimeout(() => {
-        document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    } catch (err) {
+    } catch {
       // Fallback: non-streaming JSON endpoint
       try {
         const res = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            content: effective,
+            content: input,
             inputType,
             formats,
             voiceDna: getVoiceDna(),
@@ -253,17 +206,14 @@ export default function Home() {
         });
         const data = await res.json();
         if (!res.ok || data.error) {
-          setResults({ error: data.error || `Generation failed (${res.status})` } as any);
+          setResults({ error: data.error || `Generation failed (${res.status})` });
           setPhase('idle');
         } else {
           setResults(data);
           setPhase('done');
-          setTimeout(() => {
-            document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 100);
         }
       } catch {
-        setResults({ error: 'Failed to connect to AI engine. Check your connection.' } as any);
+        setResults({ error: 'Failed to connect to AI engine. Check your connection.' });
         setPhase('idle');
       }
     } finally {
@@ -273,7 +223,7 @@ export default function Home() {
     }
   };
 
-  // Step 3: delta refine (Humanize buttons).
+  // Refine (Humanize buttons)
   const handleRefine = async (formatId: string, modifier: RefineModifier) => {
     if (!results || refiningFormat) return;
     const current = formatTextForRefine(results, formatId);
@@ -286,14 +236,9 @@ export default function Home() {
         body: JSON.stringify({ text: current, modifier, format: formatId, voiceDna: getVoiceDna() }),
       });
       const data = await res.json();
-      if (!res.ok || data.error) {
-        alert(data.error || 'Refine failed');
-        return;
-      }
+      if (!res.ok || data.error) return;
       setResults((prev) => (prev ? applyRefinedText(prev, formatId, String(data.text)) : prev));
-    } catch {
-      alert('Refine failed. Check your connection.');
-    } finally {
+    } catch { /* silently fail */ } finally {
       setRefiningFormat(null);
     }
   };
@@ -306,7 +251,6 @@ export default function Home() {
 
   const handleSampleClick = (sample: string) => {
     setInput(sample);
-    document.getElementById('hero-textarea')?.focus();
   };
 
   const formatTextForRefine = (r: GeneratedContent, formatId: string): string => {
@@ -334,72 +278,65 @@ export default function Home() {
     return out;
   };
 
+  const handleDownloadAll = () => {
+    if (!results) return;
+    const blob = new Blob([
+      `=== TWITTER THREAD ===\n\n${results.twitterThread?.join('\n\n---\n\n') || ''}\n\n=== LINKEDIN POST ===\n\n${results.linkedinPost || ''}\n\n=== NEWSLETTER ===\n\n${results.newsletter || ''}\n\n=== INSTAGRAM ===\n\n${results.instagramCaption || ''}\n\n=== REDDIT ===\n\n${results.redditPost ? `Title: ${results.redditPost.title}\n\n${results.redditPost.body}` : ''}\n\n=== THREADS ===\n\n${results.threadsPost?.join('\n\n---\n\n') || ''}`
+    ], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'reframed-content.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <main className="min-h-screen relative overflow-hidden">
-
-
       {/* Navigation */}
-      <motion.nav
-        className="container mx-auto px-6 py-4 flex justify-between items-center relative z-10"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
+      <nav className="container mx-auto px-6 py-4 flex justify-between items-center relative z-10">
         <div className="flex items-center gap-2">
-          <motion.div
-            className="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30"
-            whileHover={{ scale: 1.1, rotate: 180 }}
-            transition={{ duration: 0.4 }}
-          >
-            <Sparkles className="w-5 h-5 text-white" />
-          </motion.div>
-          <span className="text-white font-bold text-xl tracking-tight">Reframe<span className="text-indigo-400">.</span>ai</span>
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-black" />
+          </div>
+          <span className="text-white font-semibold text-lg tracking-tight">Reframe<span className="text-slate-400">.ai</span></span>
         </div>
 
         {/* Desktop Nav */}
         <div className="hidden md:flex gap-6 items-center">
-          <a href="#features" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Features</a>
-          <a href="#how-it-works" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">How it works</a>
-          <a href="/voice-dna/cold-start" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Train Voice DNA</a>
-          <button onClick={() => setShowPricing(true)} className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Pricing</button>
-          <button onClick={() => setShowFeedback(true)} className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Feedback</button>
+          <a href="#features" className="text-slate-400 hover:text-white transition-colors text-sm">Features</a>
+          <a href="#how-it-works" className="text-slate-400 hover:text-white transition-colors text-sm">How it works</a>
+          <a href="/voice-dna/cold-start" className="text-slate-400 hover:text-white transition-colors text-sm">Voice DNA</a>
+          <button onClick={() => setShowPricing(true)} className="text-slate-400 hover:text-white transition-colors text-sm">Pricing</button>
           {!isSignedIn ? (
             <SignInButton mode="modal">
-              <button className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Login</button>
+              <button className="text-sm text-slate-400 hover:text-white transition-colors">Sign in</button>
             </SignInButton>
           ) : (
             <UserButton />
           )}
-          <motion.button
+          <button
             onClick={() => setShowPricing(true)}
-            className="btn-premium btn-gold text-sm px-5 py-2.5"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="bg-white text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-100 transition-colors"
           >
-            <Crown className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />
             Get Pro
-          </motion.button>
+          </button>
         </div>
 
-        {/* Mobile Nav - visible on small screens */}
-        <div className="md:hidden flex items-center gap-2">
+        {/* Mobile Nav */}
+        <div className="md:hidden flex items-center gap-3">
           {!isSignedIn ? (
             <SignInButton mode="modal">
-              <button className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Login</button>
+              <button className="text-sm text-slate-400">Sign in</button>
             </SignInButton>
           ) : (
             <UserButton />
           )}
+          <button className="text-white" onClick={() => setShowMobileMenu(!showMobileMenu)}>
+            {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
-
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-white"
-          onClick={() => setShowMobileMenu(!showMobileMenu)}
-        >
-          {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </motion.nav>
+      </nav>
 
       {/* Mobile Menu */}
       <AnimatePresence>
@@ -408,16 +345,14 @@ export default function Home() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="md:hidden relative z-20 mx-6 my-2 glass-card rounded-2xl p-6 space-y-3"
+            className="md:hidden relative z-20 mx-4 my-2 bg-[#18181b] border border-white/10 rounded-xl p-4 space-y-2"
           >
-            <a href="#features" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2">Features</a>
-            <a href="#how-it-works" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2">How it works</a>
-            <a href="/voice-dna/cold-start" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2">Train Voice DNA</a>
-            <button onClick={() => { setShowPricing(true); setShowMobileMenu(false); }} className="block text-slate-300 hover:text-white py-2 w-full text-left">Pricing</button>
-            <button onClick={() => { setShowFeedback(true); setShowMobileMenu(false); }} className="block text-slate-300 hover:text-white py-2 w-full text-left">Feedback</button>
-            <button onClick={() => { setShowPricing(true); setShowMobileMenu(false); }} className="w-full btn-premium btn-gold py-3 mt-2">
-              <Crown className="w-4 h-4 inline-block mr-1.5" />
-              Get Pro
+            <a href="#features" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2 text-sm">Features</a>
+            <a href="#how-it-works" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2 text-sm">How it works</a>
+            <a href="/voice-dna/cold-start" onClick={() => setShowMobileMenu(false)} className="block text-slate-300 hover:text-white py-2 text-sm">Voice DNA</a>
+            <button onClick={() => { setShowPricing(true); setShowMobileMenu(false); }} className="block text-slate-300 hover:text-white py-2 w-full text-left text-sm">Pricing</button>
+            <button onClick={() => { setShowPricing(true); setShowMobileMenu(false); }} className="w-full bg-white text-black text-sm font-medium py-2.5 rounded-lg mt-2">
+              Get Pro — $15
             </button>
           </motion.div>
         )}
@@ -431,91 +366,168 @@ export default function Home() {
         inputType={inputType}
         setInputType={setInputType}
         wordCount={wordCount}
-        onGenerate={handleRepurpose}
+        onGenerate={handleGenerate}
         isProActive={isProActive}
         onSampleClick={handleSampleClick}
         formats={formats}
-        setFormats={setFormats}
+        setFormats={() => {}}
       />
 
-      {/* Stats Bar - Mobile optimized */}
-      <section className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 max-w-5xl mx-auto text-center">
-          <div className="py-4 border-r border-white/5 md:border-0 md:border-r md:border-white/5 md:py-4">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <TrendingUp className="w-6 h-6 text-emerald-400" />
+      {/* ===== RESULTS SECTION — Right after hero ===== */}
+      <div ref={resultsRef} />
+      <section id="results-section" className="container mx-auto px-4 md:px-6 pb-20 relative z-10">
+        {loading ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="max-w-2xl mx-auto rounded-2xl bg-[#09090b] border border-white/10 p-12 text-center"
+          >
+            <div className="w-16 h-16 mx-auto mb-6 rounded-xl bg-white/5 flex items-center justify-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+              >
+                <Brain className="w-8 h-8 text-white" />
+              </motion.div>
             </div>
-            <div className="text-3xl md:text-4xl font-bold text-white">1,247</div>
-            <p className="text-xs md:text-sm text-slate-400">Content pieces today</p>
-          </div>
-          <div className="py-4 border-r border-white/5 md:border-0 md:border-r md:border-white/5 md:py-4">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Zap className="w-6 h-6 text-amber-400" />
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={currentStep}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="text-lg text-white font-medium mb-2"
+              >
+                {generatingSteps[currentStep]}
+              </motion.p>
+            </AnimatePresence>
+            {statusMessage && (
+              <p className="text-sm text-slate-400 mt-2">{statusMessage}</p>
+            )}
+            <div className="mt-6 flex gap-1.5 justify-center">
+              {generatingSteps.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    currentStep === i ? 'w-8 bg-white' : 'w-2 bg-white/20'
+                  }`}
+                />
+              ))}
             </div>
-            <div className="text-3xl md:text-4xl font-bold text-white">8.3m</div>
-            <p className="text-xs md:text-sm text-slate-400">Total reach</p>
-          </div>
-          <div className="py-4 border-r border-white/5 md:border-0 md:border-r md:border-white/5 md:py-4">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Shield className="w-6 h-6 text-sky-400" />
-            </div>
-            <div className="text-3xl md:text-4xl font-bold text-white">94%</div>
-            <p className="text-xs md:text-sm text-slate-400">Engagement boost</p>
-          </div>
-          <div className="py-4">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Trophy className="w-6 h-6 text-pink-400" />
-            </div>
-            <div className="text-3xl md:text-4xl font-bold text-white">2.1k</div>
-            <p className="text-xs md:text-sm text-slate-400">Happy creators</p>
-          </div>
-        </div>
+          </motion.div>
+        ) : results ? (
+          results.error ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-lg mx-auto text-center py-12"
+            >
+              <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                <AlertCircle className="w-8 h-8 text-red-400" />
+              </div>
+              <h3 className="text-lg text-white font-medium mb-2">Something went wrong</h3>
+              <p className="text-slate-400 text-sm">{results.error}</p>
+              <button
+                onClick={() => { setResults(null); setPhase('idle'); }}
+                className="mt-4 text-sm text-white/60 hover:text-white underline underline-offset-4"
+              >
+                Try again
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-6xl mx-auto"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold text-white">Your content</h2>
+                <div className="flex items-center gap-3">
+                  {voiceApplied && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-medium text-emerald-300">
+                      <Brain className="w-3 h-3" /> Voice DNA
+                    </span>
+                  )}
+                  <button
+                    onClick={handleDownloadAll}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-slate-300 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download all
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <ResultsDisplay
+                    twitterThread={results?.twitterThread}
+                    linkedinPost={results?.linkedinPost}
+                    newsletter={results?.newsletter}
+                    instagramCaption={results?.instagramCaption}
+                    redditPost={results?.redditPost}
+                    threadsPost={results?.threadsPost}
+                    previewOnly={false}
+                    onCopy={handleCopy}
+                    copied={copied}
+                    streamingFormats={streamingFormats}
+                    onRefine={handleRefine}
+                    refiningFormat={refiningFormat}
+                  />
+                </div>
+                <div className="bg-[#09090b] border border-white/10 rounded-2xl p-6 h-fit">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-sm font-medium text-white">Format Overview</h3>
+                    <span className="text-xs text-slate-500">Ready to post</span>
+                  </div>
+                  <div className="space-y-2">
+                    {results.twitterThread && (
+                      <FormatStat icon="𝕏" label="Twitter Thread" value={`${results.twitterThread.length} tweets`} />
+                    )}
+                    {results.linkedinPost && (
+                      <FormatStat icon="in" label="LinkedIn Post" value={`${results.linkedinPost.split(/\s+/).length} words`} />
+                    )}
+                    {results.newsletter && (
+                      <FormatStat icon="✉️" label="Newsletter" value="Draft ready" />
+                    )}
+                    {results.instagramCaption && (
+                      <FormatStat icon="📷" label="Instagram" value="Caption ready" />
+                    )}
+                    {results.redditPost && (
+                      <FormatStat icon="🔴" label="Reddit" value="Post ready" />
+                    )}
+                    {results.threadsPost && (
+                      <FormatStat icon="↗️" label="Threads" value={`${results.threadsPost.length} posts`} />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )
+        ) : phase === 'idle' ? (
+          null /* Don't show empty state — hero IS the CTA */
+        ) : null}
       </section>
 
-      {/* Hook Laboratory */}
-      {hookOptions.length > 0 && (
-        <section id="hook-lab-section" className="container mx-auto px-6 py-8">
-          <HookLab
-            hooks={hookOptions}
-            selected={selectedHook}
-            onSelect={setSelectedHook}
-            onConfirm={handleStreamGenerate}
-            streaming={loading}
-          />
-        </section>
-      )}
+      {/* ===== Marketing sections ===== */}
+      <section id="how-it-works">
+        <HowItWorks />
+      </section>
 
-      {/* Live Demo Preview */}
-      <LiveDemo />
-
-      {/* How It Works */}
-      <HowItWorks />
-
-      {/* Feature Grid */}
       <section id="features">
         <FeatureGrid />
       </section>
 
       {/* Pricing */}
       <section id="pricing" className="container mx-auto px-6 py-20 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 mb-4">
-            <Crown className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">Lifetime Access</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            One payment. <span className="gradient-text-gold">Forever yours.</span>
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-semibold text-white mb-4">
+            One payment. Forever yours.
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            No subscriptions. No monthly fees. Pay once, repurpose content forever.
+            No subscriptions. No monthly fees. Pay once, reframe content forever.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           <PricingCard
@@ -524,7 +536,7 @@ export default function Home() {
             period="forever"
             description="Perfect for trying it out"
             features={[
-              { text: '5 repowers per day', included: true },
+              { text: '5 generations per day', included: true },
               { text: 'Basic Twitter + LinkedIn output', included: true },
               { text: 'AI Hook Optimization', included: false },
               { text: 'All formats preview', included: false },
@@ -539,7 +551,7 @@ export default function Home() {
             period="one-time"
             description="Best for serious creators"
             features={[
-              { text: 'Unlimited repowers — forever', included: true, highlight: true },
+              { text: 'Unlimited generations — forever', included: true, highlight: true },
               { text: 'All platforms: Twitter, LinkedIn, Newsletter, Threads', included: true },
               { text: 'AI Hook Optimization + Platform Formatting', included: true, highlight: true },
               { text: 'Priority 24/7 support', included: true },
@@ -552,14 +564,8 @@ export default function Home() {
           />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-12 text-center"
-        >
-          <div className="inline-flex flex-wrap items-center justify-center gap-6 px-6 py-3 rounded-2xl glass-card text-sm text-slate-300">
+        <div className="mt-12 text-center">
+          <div className="inline-flex flex-wrap items-center justify-center gap-6 px-6 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-slate-400">
             <span className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-emerald-400" />
               30-day money-back guarantee
@@ -573,230 +579,29 @@ export default function Home() {
               Pay once, use forever
             </span>
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* Testimonials */}
       <Testimonials />
-
-      {/* FAQ */}
       <FAQ />
-
-      {/* Results Section */}
-      <section id="results-section" className="container mx-auto px-6 py-20 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Your Content, <span className="gradient-text">Ready to Post</span>
-          </h2>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            One-click copy. Multiple formats. Maximum reach.
-            {voiceApplied && (
-              <span className="ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-300 align-middle">
-                <Brain className="w-3 h-3" /> Voice DNA on
-              </span>
-            )}
-          </p>
-        </motion.div>
-
-        {loading ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="max-w-2xl mx-auto glass-card-premium rounded-3xl p-12 text-center"
-          >
-            <motion.div
-              className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            >
-              <Brain className="w-10 h-10 text-white" />
-            </motion.div>
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={currentStep}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="text-xl text-white font-semibold mb-2"
-              >
-                {generatingSteps[currentStep]}
-              </motion.p>
-            </AnimatePresence>
-            <p className="text-slate-400">This usually takes 5-15 seconds...</p>
-            <div className="mt-6 flex gap-2 justify-center">
-              {generatingSteps.map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="h-1.5 rounded-full bg-indigo-500"
-                  animate={{
-                    width: currentStep === i ? 32 : 8,
-                    opacity: currentStep === i ? 1 : 0.3,
-                  }}
-                  transition={{ duration: 0.3 }}
-                />
-              ))}
-            </div>
-          </motion.div>
-        ) : results ? (
-          results.error ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="max-w-2xl mx-auto text-center py-12"
-            >
-              <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-red-500/10 to-orange-500/10 flex items-center justify-center border border-red-500/20">
-                <AlertCircle className="w-10 h-10 text-red-500" />
-              </div>
-              <h3 className="text-xl text-white font-bold mb-2">Oops! Something went wrong.</h3>
-              <p className="text-slate-400 text-lg">
-                {results.error}
-              </p>
-            </motion.div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <div className="lg:col-span-2">
-              <ResultsDisplay
-                twitterThread={results?.twitterThread}
-                linkedinPost={results?.linkedinPost}
-                newsletter={results?.newsletter}
-                instagramCaption={results?.instagramCaption}
-                redditPost={results?.redditPost}
-                threadsPost={results?.threadsPost}
-                previewOnly={false}
-                onCopy={handleCopy}
-                copied={copied}
-                streamingFormats={streamingFormats}
-                onRefine={handleRefine}
-                refiningFormat={refiningFormat}
-              />
-            </div>
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="glass-card-premium rounded-2xl p-6 h-fit"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-white">📊 Format Overview</h3>
-                <span className="text-xs text-slate-400">Ready to post</span>
-              </div>
-              <div className="space-y-3">
-                {results.twitterThread && (
-                  <FormatStat icon="𝕏" label="Twitter Thread" value={`${results.twitterThread.length} tweets`} color="blue" />
-                )}
-                {results.linkedinPost && (
-                  <FormatStat icon="in" label="LinkedIn Post" value={`${results.linkedinPost.split(/\s+/).length} words`} color="sky" />
-                )}
-                {results.newsletter && (
-                  <FormatStat icon="✉️" label="Newsletter" value="Draft ready" color="purple" />
-                )}
-                {results.instagramCaption && (
-                  <FormatStat icon="📷" label="Instagram" value="Caption ready" color="pink" />
-                )}
-                {results.redditPost && (
-                  <FormatStat icon="🔴" label="Reddit" value="Post ready" color="orange" />
-                )}
-                {results.threadsPost && (
-                  <FormatStat icon="↗️" label="Threads" value={`${results.threadsPost.length} threads`} color="indigo" />
-                )}
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-white/5">
-                <div className="text-xs text-slate-400 mb-2">Engagement Score</div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
-                      initial={{ width: 0 }}
-                      animate={{ width: '92%' }}
-                      transition={{ duration: 1.5, delay: 0.3 }}
-                    />
-                  </div>
-                  <span className="text-sm font-bold gradient-text-gold">92%</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">Optimized for virality</p>
-              </div>
-
-              <motion.button
-                onClick={() => {
-                  const blob = new Blob([
-                    `=== TWITTER THREAD ===\n\n${results.twitterThread?.join('\n\n---\n\n') || ''}\n\n=== LINKEDIN POST ===\n\n${results.linkedinPost || ''}\n\n=== NEWSLETTER ===\n\n${results.newsletter || ''}\n\n=== INSTAGRAM ===\n\n${results.instagramCaption || ''}\n\n=== REDDIT ===\n\n${results.redditPost ? `Title: ${results.redditPost.title}\n\n${results.redditPost.body}` : ''}\n\n=== THREADS ===\n\n${results.threadsPost?.join('\n\n---\n\n') || ''}`
-                  ], { type: 'text/plain' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = 'repurposed-content.txt';
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-                className="w-full mt-6 btn-premium btn-secondary py-3 flex items-center justify-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <ArrowRight className="w-4 h-4" />
-                Download All
-              </motion.button>
-            </motion.div>
-          </div>
-          )
-        ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="max-w-2xl mx-auto text-center py-12"
-          >
-            <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 flex items-center justify-center border border-white/5">
-              <Sparkles className="w-10 h-10 text-slate-600" />
-            </div>
-            <p className="text-slate-400 text-lg">
-              Paste your content above and hit <span className="text-white font-semibold">Generate</span> to see the magic ✨
-            </p>
-          </motion.div>
-        )}
-      </section>
 
       {/* Final CTA */}
       <section className="container mx-auto px-6 py-20 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="max-w-4xl mx-auto text-center glass-card-premium rounded-3xl p-12 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl" />
-          <div className="relative">
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="inline-block mb-6"
-            >
-              <Rocket className="w-16 h-16 text-amber-400" />
-            </motion.div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Stop Writing. <span className="gradient-text-gold">Start Reframing.</span>
-            </h2>
-            <p className="text-lg text-slate-300 mb-8 max-w-2xl mx-auto">
-              Join 2,000+ creators who turned one idea into a week's worth of content in 30 seconds.
-            </p>
-            <motion.button
-              onClick={() => setShowPricing(true)}
-              className="btn-premium btn-gold px-8 py-4 text-lg"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Crown className="w-5 h-5 inline-block mr-2 -mt-0.5" />
-              Get Lifetime Pro — $15
-            </motion.button>
-            <p className="text-sm text-slate-400 mt-4">One-time payment. Forever access.</p>
-          </div>
-        </motion.div>
+        <div className="max-w-3xl mx-auto text-center bg-[#09090b] border border-white/10 rounded-2xl p-12">
+          <h2 className="text-3xl md:text-4xl font-semibold text-white mb-4">
+            Stop writing. Start reframing.
+          </h2>
+          <p className="text-lg text-slate-400 mb-8 max-w-xl mx-auto">
+            Join 2,000+ creators who turned one idea into a week of content in 30 seconds.
+          </p>
+          <button
+            onClick={() => setShowPricing(true)}
+            className="bg-white text-black font-medium px-8 py-3 rounded-lg hover:bg-slate-100 transition-colors"
+          >
+            Get Lifetime Pro — $15
+          </button>
+          <p className="text-sm text-slate-500 mt-4">One-time payment. Forever access.</p>
+        </div>
       </section>
 
       <Footer />
@@ -807,51 +612,28 @@ export default function Home() {
       {showFeedback && <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />}
 
       {/* Floating Feedback Button */}
-      <motion.button
+      <button
         onClick={() => setShowFeedback(true)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-indigo-500/30"
-        whileHover={{ scale: 1.1, rotate: 15 }}
-        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white border border-white/10 transition-colors"
         aria-label="Send feedback"
-        animate={{
-          boxShadow: [
-            '0 10px 40px rgba(99, 102, 241, 0.3)',
-            '0 10px 60px rgba(99, 102, 241, 0.5)',
-            '0 10px 40px rgba(99, 102, 241, 0.3)',
-          ],
-        }}
-        transition={{
-          boxShadow: { duration: 2, repeat: Infinity },
-          scale: { duration: 0.2 },
-          rotate: { duration: 0.3 },
-        }}
       >
-        <MessageSquare className="w-6 h-6" />
-      </motion.button>
+        <MessageSquare className="w-5 h-5" />
+      </button>
     </main>
   );
 }
 
-function FormatStat({ icon, label, value, color }: { icon: string; label: string; value: string; color: string }) {
-  const colorClasses: Record<string, string> = {
-    blue: 'from-blue-500/20 to-blue-600/20 border-blue-500/30 text-blue-300',
-    sky: 'from-sky-500/20 to-sky-600/20 border-sky-500/30 text-sky-300',
-    purple: 'from-purple-500/20 to-purple-600/20 border-purple-500/30 text-purple-300',
-  };
-
+function FormatStat({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <motion.div
-      whileHover={{ x: 4 }}
-      className={`flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r ${colorClasses[color]} border`}
-    >
-      <div className="w-10 h-10 rounded-lg bg-slate-900/50 flex items-center justify-center font-bold">
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-sm font-medium text-white">
         {icon}
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-white">{label}</div>
-        <div className="text-xs opacity-80">{value}</div>
+        <div className="text-xs text-slate-500">{value}</div>
       </div>
-      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-    </motion.div>
+      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+    </div>
   );
 }
