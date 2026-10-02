@@ -25,7 +25,7 @@ export function Footer() {
           </span>
         </div>
         <p className="text-sm max-w-2xl">
-          Transform your ideas into platform-perfect content with AI-powered repurposing.
+          Transform your ideas into platform-perfect content with AI-powered reframing.
         </p>
       </div>
 

@@ -14,7 +14,7 @@ export function FAQ() {
   const faqItems: FAQItem[] = [
     {
       question: "How does Reframe.ai actually work?",
-      answer: "Our AI analyzes your input content, extracts key insights, themes, and tone, then generates platform-native variations optimized for each channel's algorithm and audience expectations. It's not just rewriting — it's strategic repurposing.",
+      answer: "Our AI analyzes your input content, extracts key insights, themes, and tone, then generates platform-native variations optimized for each channel's algorithm and audience expectations. It's not just rewriting — it's strategic reframing.",
       icon: Sparkles,
       bgColor: "from-indigo-500/10 via-purple-500/10 to-pink-500/10"
     },
@@ -50,7 +50,7 @@ export function FAQ() {
     },
     {
       question: "What makes this different from other AI tools?",
-      answer: "Most AI tools give you generic outputs. Reframe.ai is engineered specifically for content repurposing with platform-native formatting, viral hook optimization, and zero-fluff generation. It's a specialized tool, not a general-purpose chatbot.",
+      answer: "Most AI tools give you generic outputs. Reframe.ai is engineered specifically for content reframing with platform-native formatting, viral hook optimization, and zero-fluff generation. It's a specialized tool, not a general-purpose chatbot.",
       icon: Award,
       bgColor: "from-amber-500/10 via-orange-500/10 to-red-500/10"
     },

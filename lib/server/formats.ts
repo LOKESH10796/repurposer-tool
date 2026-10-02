@@ -1,13 +1,13 @@
 // Shared generation specs — single source of truth for /api/generate + /api/generate/stream.
 // Version: 1.0.0
 
-export const MODEL_PRIMARY = 'gemini-2.5-flash';
-export const MODEL_FALLBACK = 'gemini-2.0-flash-exp';
+export const MODEL_PRIMARY = 'gemini-2.0-flash';
+export const MODEL_FALLBACK = 'gemini-1.5-flash';
 
 export const INPUT_PREPROMPTS: Record<string, string> = {
-  blog: `The input below is a BLOG POST. First extract its core thesis + 3 key insights, then repurpose those (don't just rephrase sentences).`,
-  transcript: `The input below is a raw TRANSCRIPT (may contain filler words, timestamps, speaker labels). First clean it: remove filler, fix grammar, identify the 3 strongest points. Then repurpose.`,
-  notes: `The input below is rough NOTES (fragments, bullets). First expand into a coherent argument, fill obvious gaps conservatively. Then repurpose.`,
+  blog: `The input below is a BLOG POST. First extract its core thesis + 3 key insights, then reframe those (don't just rephrase sentences).`,
+  transcript: `The input below is a raw TRANSCRIPT (may contain filler words, timestamps, speaker labels). First clean it: remove filler, fix grammar, identify the 3 strongest points. Then reframe.`,
+  notes: `The input below is rough NOTES (fragments, bullets). First expand into a coherent argument, fill obvious gaps conservatively. Then reframe.`,
 };
 
 export interface FormatSpec {

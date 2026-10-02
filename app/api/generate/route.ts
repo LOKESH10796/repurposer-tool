@@ -11,8 +11,8 @@ import { buildVoiceConstraints, isValidVoiceDNA } from '@/lib/voice-prompt-build
 // Config
 // ---------------------------------------------------------------------------
 
-const MODEL_PRIMARY = 'gemini-2.5-flash';
-const MODEL_FALLBACK = 'gemini-2.0-flash-exp';
+const MODEL_PRIMARY = 'gemini-2.0-flash';
+const MODEL_FALLBACK = 'gemini-1.5-flash';
 
 const BodySchema = z.object({
   content: z.string().min(10).max(30000),
@@ -26,9 +26,9 @@ const BodySchema = z.object({
 });
 
 const INPUT_PREPROMPTS: Record<string, string> = {
-  blog: `The input below is a BLOG POST. First extract its core thesis + 3 key insights, then repurpose those (don't just rephrase sentences).`,
-  transcript: `The input below is a raw TRANSCRIPT (may contain filler words, timestamps, speaker labels). First clean it: remove filler, fix grammar, identify the 3 strongest points. Then repurpose.`,
-  notes: `The input below is rough NOTES (fragments, bullets). First expand into a coherent argument, fill obvious gaps conservatively. Then repurpose.`,
+  blog: `The input below is a BLOG POST. First extract its core thesis + 3 key insights, then reframe those (don't just rephrase sentences).`,
+  transcript: `The input below is a raw TRANSCRIPT (may contain filler words, timestamps, speaker labels). First clean it: remove filler, fix grammar, identify the 3 strongest points. Then reframe.`,
+  notes: `The input below is rough NOTES (fragments, bullets). First expand into a coherent argument, fill obvious gaps conservatively. Then reframe.`,
 };
 
 // Per-format spec: output key, temperature, prompt. Tuned individually.
@@ -249,7 +249,7 @@ async function generateOneFormat(
         });
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
           try {
-            const result = await model.generateContent(systemPrompt + '\n\nContent to repurpose:\n\n' + content);
+            const result = await model.generateContent(systemPrompt + '\n\nContent to reframe:\n\n' + content);
             const text = (await result.response).text();
             if (!text || text.trim().length === 0) throw new Error('Empty response from Gemini API');
             return text;

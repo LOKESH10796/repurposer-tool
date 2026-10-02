@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         formats.map(async (format) => {
           const spec = FORMAT_SPECS[format];
           if (!spec) return;
-          const prompt = `${spec.prompt}\n\n${inputPre}\n${voice}${hookLine}\n${STREAM_SUFFIX[format]}\n\nContent to repurpose:\n\n${content}`;
+          const prompt = `${spec.prompt}\n\n${inputPre}\n${voice}${hookLine}\n${STREAM_SUFFIX[format]}\n\nContent to reframe:\n\n${content}`;
           // Try each key once for this format
           let lastErr = 'failed';
           for (let k = 0; k < apiKeys.length; k++) {
