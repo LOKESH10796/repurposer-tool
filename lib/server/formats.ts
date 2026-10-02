@@ -1,8 +1,8 @@
 // Shared generation specs — single source of truth for /api/generate + /api/generate/stream.
 // Version: 1.0.0
 
-export const MODEL_PRIMARY = 'gemini-2.0-flash';
-export const MODEL_FALLBACK = 'gemini-1.5-flash';
+export const MODEL_PRIMARY = 'gemini-3.5-flash';
+export const MODEL_FALLBACK = 'gemini-3.5-flash';
 
 export const INPUT_PREPROMPTS: Record<string, string> = {
   blog: `The input below is a BLOG POST. First extract its core thesis + 3 key insights, then reframe those (don't just rephrase sentences).`,

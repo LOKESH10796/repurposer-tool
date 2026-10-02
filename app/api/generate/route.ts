@@ -11,8 +11,8 @@ import { buildVoiceConstraints, isValidVoiceDNA } from '@/lib/voice-prompt-build
 // Config
 // ---------------------------------------------------------------------------
 
-const MODEL_PRIMARY = 'gemini-2.0-flash';
-const MODEL_FALLBACK = 'gemini-1.5-flash';
+const MODEL_PRIMARY = 'gemini-3.5-flash';
+const MODEL_FALLBACK = 'gemini-3.5-flash';
 
 const BodySchema = z.object({
   content: z.string().min(10).max(30000),
