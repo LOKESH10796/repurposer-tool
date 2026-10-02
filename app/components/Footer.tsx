@@ -32,36 +32,25 @@ export function Footer() {
       <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto text-left mb-8">
         <div className="space-y-3">
           <h4 className="font-semibold text-white mb-2">Product</h4>
-          <p className="text-slate-400">How it works</p>
-          <p className="text-slate-400">Features</p>
-          <p className="text-slate-400">Pricing</p>
-          <p className="text-slate-400">Roadmap</p>
-          <p className="text-slate-400">Status</p>
+          <a href="#how-it-works" className="block text-slate-400 hover:text-white transition-colors">How it works</a>
+          <a href="#features" className="block text-slate-400 hover:text-white transition-colors">Features</a>
+          <a href="#pricing" className="block text-slate-400 hover:text-white transition-colors">Pricing</a>
+          <a href="/voice-dna/cold-start" className="block text-slate-400 hover:text-white transition-colors">Voice DNA</a>
         </div>
         <div className="space-y-3">
           <h4 className="font-semibold text-white mb-2">Company</h4>
-          <p className="text-slate-400">About</p>
-          <p className="text-slate-400">Blog</p>
-          <p className="text-slate-400">Careers</p>
-          <p className="text-slate-400">Press</p>
-          <p className="text-slate-400">Contact</p>
+          <a href="mailto:lokeshgounder@gmail.com" className="block text-slate-400 hover:text-white transition-colors">Contact</a>
         </div>
         <div className="space-y-3">
           <h4 className="font-semibold text-white mb-2">Legal</h4>
-          <p className="text-slate-400">Terms of Service</p>
-          <p className="text-slate-400">Privacy Policy</p>
-          <p className="text-slate-400">Cookie Policy</p>
-          <p className="text-slate-400">Security</p>
-          <p className="text-slate-400">GDPR</p>
+          <a href="#" className="block text-slate-400 hover:text-white transition-colors">Terms of Service</a>
+          <a href="#" className="block text-slate-400 hover:text-white transition-colors">Privacy Policy</a>
         </div>
       </div>
 
       <div className="flex flex-wrap justify-center gap-6 mb-8">
-        <a href="#" className="text-slate-400 hover:text-white transition-colors">Twitter</a>
-        <a href="#" className="text-slate-400 hover:text-white transition-colors">LinkedIn</a>
-        <a href="#" className="text-slate-400 hover:text-white transition-colors">YouTube</a>
-        <a href="#" className="text-slate-400 hover:text-white transition-colors">Instagram</a>
-        <a href="#" className="text-slate-400 hover:text-white transition-colors">Discord</a>
+        <a href="https://x.com/GounderLokesh" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-white transition-colors">Twitter (X)</a>
+        <a href="mailto:lokeshgounder@gmail.com" className="text-slate-400 hover:text-white transition-colors">Email</a>
       </div>
 
       <div className="border-t border-slate-700/50 pt-6">

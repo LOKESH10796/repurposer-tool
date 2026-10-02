@@ -84,8 +84,7 @@ export default function ColdStartPage() {
     // Simulate processing
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Create mock Voice DNA based on selections
-    const mockVoiceDna = {
+    const mockVoiceDna: any = {
       id: generateId('vdn'),
       userId: 'user-coldstart',
       createdAt: new Date().toISOString(),
@@ -100,25 +99,26 @@ export default function ColdStartPage() {
       },
       source: 'coldstart',
       
-      tone: {
-        professional: 0.25, conversational: 0.20, authoritative: 0.15,
-        vulnerable: 0.10, humorous: 0.05, analytical: 0.15,
-        inspirational: 0.05, contrarian: 0.05,
-        primaryLabel: 'Balanced Professional',
-        secondaryLabel: 'Analytical Thinker',
-        description: 'Your tone balances professionalism with analytical depth.',
+      toneProfile: {
+        dimensions: {
+          professional: 0.25, conversational: 0.20, authoritative: 0.15,
+          vulnerable: 0.10, humorous: 0.05, analytical: 0.15,
+          inspirational: 0.05, contrarian: 0.05,
+        },
+        primary: 'Balanced Professional',
+        secondary: 'Analytical Thinker',
+        confidence: 0.65,
       },
       
-      hooks: {
-        framework: 0, contrarian: 0, story: 0, data: 0, question: 0,
-        boldClaim: 0, listicle: 0, howTo: 0, caseStudy: 0, prediction: 0,
-        topHooks: [],
-      },
+      hooks: [
+        { hookType: 'framework', count: 0, percentage: 0, topHooks: [] },
+      ],
       pillars: [],
       formatPreference: {
-        carousel: 20, singleImage: 15, video: 10, textOnly: 15,
-        poll: 10, document: 10, article: 10,
-        primary: 'carousel',
+        format: 'carousel',
+        engagementRate: 5.5,
+        multiplier: 1.2,
+        isPrimary: true,
         engagementMultiplier: {
           carousel: 3.2, singleImage: 1.0, video: 2.1,
           textOnly: 0.7, poll: 1.4, document: 1.8, article: 1.2,
@@ -139,8 +139,8 @@ export default function ColdStartPage() {
         },
       },
       ctaStyle: {
-        soft: 25, direct: 15, resource: 30, community: 15, challenge: 10,
-        primary: 'resource',
+        type: 'resource',
+        frequency: 0.3,
         examples: [
           'Save this framework for later 📌',
           'Grab the template in the comments',
@@ -156,23 +156,25 @@ export default function ColdStartPage() {
         avgSentenceLength: 18,
         avgWordsPerPost: 180,
         fleschKincaidGrade: 11,
+        fleschKincaid: 11,
         emojiFrequency: 0.3,
         topEmojis: ['🚀', '💡', '📈', '🎯', '🔑'],
         avgHashtagsPerPost: 2.5,
         topHashtags: ['#sales', '#ai', '#leadership', '#growth', '#strategy'],
+        hashtagPatterns: [],
+        formattingMarkers: [],
         usesBullets: true,
         usesNumberedLists: true,
         usesLineBreaks: true,
       },
       benchmarks: {
-        avgImpressions: 1500,
-        avgEngagementRate: 4.2,
-        avgLikes: 63,
-        avgComments: 8,
-        avgShares: 4,
+        meanImpressions: 1500,
+        medianImpressions: 1200,
+        meanEngagementRate: 4.2,
         topPostImpressions: 8500,
         topPostEngagementRate: 12.5,
-        percentileRank: 65,
+        percentile: 65,
+        topPost: null,
       },
       
       coldStart: {
